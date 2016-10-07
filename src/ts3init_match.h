@@ -1,43 +1,46 @@
 #ifndef _TS3INIT_MATCH_H
 #define _TS3INIT_MATCH_H
 
-enum {
-    SEED_SHA512_LEN = 512 / 8
+/* Enums for get_cookie and get_puzzle matches */
+enum
+{
+    CHK_COMMON_CLIENT_VERSION = 1 << 0,
+    CHK_COMMON_VALID_MASK     = (1 << 1) -1
 };
 
-enum {
-    COMMAND_CHECK_GET_COOKIE = 1,
-    COMMAND_CHECK_GET_PUZZLE = 2,
-    COMMAND_MASK = 3,
-
-    CHK_COMMON_CLIENT_VERSION = 1 << 2,
-    CHK_COMMON_MASK = 1 << 2,
-
-    COMMAND_AND_CHK_COMMON_MASK = COMMAND_MASK | CHK_COMMON_MASK,
-    COMMAND_SPECIFIC_OPTIONS_MASK = 0xf0
+/* Enums and structs for get_cookie */
+enum
+{ 
+    CHK_GET_COOKIE_CHECK_TIMESTAMP = 1 << 0,
+    CHK_GET_COOKIE_VALID_MASK      = (1 << 1) -1
 };
 
-enum { 
-    CHK_GET_COOKIE_CHECK_TIMESTAMP = 1 << 4,
-    CHK_GET_COOKIE_MASK = 1 << 4
-};
-
-enum{
-    CHK_GET_PUZZLE_CHECK_COOKIE = 1 << 4,
-    CHK_GET_PUZZLE_MASK = 1 << 4
-};
-
-struct xt_ts3init_mtinfo {
-    __u8 command_check_and_options;
+struct xt_ts3init_get_cookie_mtinfo
+{
+    __u8 common_options;
+    __u8 specific_options;
+    __u16 reserved1;
     __u32 min_client_version;
-    union{
-        struct {
-            __u32 max_utc_offset;
-        } get_cookie_opts;
-        struct {
-            __u8 cookie_seed[SEED_SHA512_LEN];
-        } get_puzzle_opts;
-    };
+    __u32 max_utc_offset;
+};
+
+
+/* Enums and structs for get_puzzle */
+enum
+{
+    CHK_GET_PUZZLE_CHECK_COOKIE = 1 << 0,
+    CHK_GET_PUZZLE_VALID_MASK   = (1 << 1) - 1,
+
+    SEED_LEN = 60
+};
+
+struct xt_ts3init_get_puzzle_mtinfo
+{
+    __u8 common_options;
+    __u8 specific_options;
+    __u16 reserved1;
+    __u32 min_client_version;
+    __u8 cookie_seed[SEED_LEN];
 };
 
 #endif /* _TS3INIT_MATCH_H */
