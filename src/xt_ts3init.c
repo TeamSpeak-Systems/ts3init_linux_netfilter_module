@@ -14,6 +14,7 @@
  *    or 3 of the License, as published by the Free Software Foundation.
  */
 
+#include "siphash24.c"
 #include "ts3init_cookie.c"
 #include "ts3init_match.c"
 
