@@ -2,9 +2,8 @@
  *    "ts3init" extension for Xtables
  *
  *    Description: A module to aid in ts3 spoof protection
- *                 This file just includes the actual code files so that
- *                 we do not have to export unneed symbols to the kernel
- *                 while stil organizing code into logical files.
+ *                 This file sets up the module load and remove functions
+ *                 and module meta data.
  *
  *    Authors:
  *    Niels Werensteijn <niels werensteijn [at] teampseak com>, 2016-10-03
@@ -14,9 +13,12 @@
  *    or 3 of the License, as published by the Free Software Foundation.
  */
 
-#include "siphash24.c"
-#include "ts3init_cookie.c"
-#include "ts3init_match.c"
+#include <linux/kernel.h>
+#include <linux/netfilter/x_tables.h>
+
+/* defined in ts3init_match.c */
+int __init ts3init_match_init(void);
+void __exit ts3init_match_exit(void);
 
 MODULE_AUTHOR("Niels Werensteijn <niels.werensteijn@teamspeak.com>");
 MODULE_DESCRIPTION("A module to aid in ts3 spoof protection");
@@ -24,15 +26,15 @@ MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_ts3init");
 MODULE_ALIAS("ip6t_ts3init");
 
-static int __init ts3init_mt_init(void)
+static int __init ts3init_init(void)
 {
-    return xt_register_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
+    return ts3init_match_init();
 }
 
-static void __exit ts3init_mt_exit(void)
+static void __exit ts3init_exit(void)
 {
-    xt_unregister_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
+    ts3init_match_exit();
 }
 
-module_init(ts3init_mt_init);
-module_exit(ts3init_mt_exit);
+module_init(ts3init_init);
+module_exit(ts3init_exit);
