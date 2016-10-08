@@ -62,7 +62,7 @@ static void check_update_seed_cache(time_t time, __u8 index,
     crypto_free_hash(desc.tfm);
 }
 
-__u8* get_cookie_seed(time_t current_time, __u8 packet_index, 
+__u8* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* cookie_seed)
 {

@@ -61,7 +61,7 @@ enum
     GET_PUZZLE_PAYLOAD_SIZE = 38
 };
 
-static const struct ts3_init_header_tag header_tag_signature =
+static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
@@ -84,7 +84,7 @@ static inline bool check_header(const struct sk_buff *skb, struct xt_action_para
 
     if (!ts3_header) return false;
 
-    if (ts3_header->tag.tag64 != header_tag_signature.tag64) return false;
+    if (ts3_header->tag.tag64 != ts3init_header_tag_signature.tag64) return false;
     if (ts3_header->packet_id != cpu_to_be16(101)) return false;
     if (ts3_header->client_id != 0) return false;
     if (ts3_header->flags != 0x88) return false;
@@ -195,7 +195,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
         current_unix_time = cache->unix_time;
                 
-        cookie_seed = get_cookie_seed(current_unix_time,
+        cookie_seed = ts3init_get_cookie_seed(current_unix_time,
             ts3_header->payload[8], &cache->cookie_cache,
             info->cookie_seed);
                     

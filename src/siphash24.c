@@ -68,7 +68,7 @@
 #define TRACE
 #endif
 
-int siphash(u8 *out, const u8 *in, u64 inlen, const u8 *k) {
+int ts3init_siphash(u8 *out, const u8 *in, u64 inlen, const u8 *k) {
   /* "somepseudorandomlygeneratedbytes" */
   u64 v0 = 0x736f6d6570736575ULL;
   u64 v1 = 0x646f72616e646f6dULL;
