@@ -66,12 +66,12 @@ int ts3init_siphash(u64 *out, const u8 *in, u64 inlen, u64 k0, u64 k1) {
   u64 v2 = 0x6c7967656e657261ULL;
   u64 v3 = 0x7465646279746573ULL;
   u64 b;
-  k0 = cpu_to_le64(k0);
-  k1 = cpu_to_le64(k1);
   u64 m;
   int i;
   const u8 *end = in + inlen - (inlen % sizeof(u64));
   const int left = inlen & 7;
+  k0 = le64_to_cpu(k0);
+  k1 = le64_to_cpu(k1);
   b = ((u64)inlen) << 56;
   v3 ^= k1;
   v2 ^= k0;
