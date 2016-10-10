@@ -183,7 +183,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
     {
         struct ts3init_cache_t* cache;
         struct ts3_init_header* ts3_header = header_data.ts3_header;
-        __u8* cookie_seed;
+        __u64* cookie_seed;
         /*__u8  cookie[8];*/
         unsigned long jifs;
         time_t current_unix_time;

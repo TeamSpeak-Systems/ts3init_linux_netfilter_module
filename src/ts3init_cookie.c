@@ -52,7 +52,7 @@ static void check_update_seed_cache(time_t time, __u8 index,
         return;
     }
 
-    ret = crypto_hash_digest(&desc, sg, 64, cache->seed + index * SHA512_SIZE);
+    ret = crypto_hash_digest(&desc, sg, 64, cache->seed8 + index * SHA512_SIZE);
     if (ret != 0)
     {
         printk(KERN_ERR KBUILD_MODNAME ": could not digest sha512\n");
@@ -62,7 +62,7 @@ static void check_update_seed_cache(time_t time, __u8 index,
     crypto_free_hash(desc.tfm);
 }
 
-__u8* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
+__u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* cookie_seed)
 {
@@ -74,19 +74,19 @@ __u8* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
 
     if (packet_index >= 8) return NULL;
     
-    current_cache_index = (current_time >> 2) & 1;
-    packet_cache_index = packet_index >> 2 /* &1 */;
+    current_cache_index = (current_time % 8) / 4;
+    packet_cache_index = packet_index / 4;
 
     /* get cache time of packet */
     current_cache_time = current_time & ~((time_t)3);
-    packet_cache_time = current_cache_index == packet_cache_index ?
-        current_cache_time : current_cache_time - (1*4);
+    packet_cache_time = current_cache_time 
+		- ((current_cache_index ^ packet_cache_index)*4);
 
     /* make sure the cache is up-to-date */
     check_update_seed_cache(packet_cache_time, packet_cache_index, cache,
         cookie_seed);
 
     /* return the proper seed */
-    return cache->seed + (SIP_KEY_SIZE * packet_index );
+    return cache->seed64 + ((SIP_KEY_SIZE/sizeof(__u64)) * packet_index );
 }
 
