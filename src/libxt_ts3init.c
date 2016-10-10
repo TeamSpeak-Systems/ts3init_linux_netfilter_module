@@ -17,6 +17,7 @@
 #include "ts3init_match.h"
 
 #define param_act(t, s, f) xtables_param_act((t), "ts3init_get_cookie", (s), (f))
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
 static void ts3init_get_cookie_help(void)
 {
@@ -189,37 +190,64 @@ static void ts3init_get_puzzle_print(const void *ip, const struct xt_entry_match
 }
 
 /* register and init */
-static struct xtables_match ts3init_get_cookie_mt_reg = {
-    .name          = "ts3init_get_cookie",
-    .revision      = 0,
-    .family        = NFPROTO_UNSPEC,
-    .version       = XTABLES_VERSION,
-    .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
-    .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
-    .help          = ts3init_get_cookie_help,
-    .parse         = ts3init_get_cookie_parse,
-    .print         = ts3init_get_cookie_print,
-    .save          = ts3init_get_cookie_save,
-    .extra_opts    = ts3init_get_cookie_opts,
-};
-
-static struct xtables_match ts3init_get_puzzle_mt_reg = {
-    .name          = "ts3init_get_puzzle",
-    .revision      = 0,
-    .family        = NFPROTO_UNSPEC,
-    .version       = XTABLES_VERSION,
-    .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
-    .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
-    .help          = ts3init_get_puzzle_help,
-    .parse         = ts3init_get_puzzle_parse,
-    .print         = ts3init_get_puzzle_print,
-    .save          = ts3init_get_puzzle_save,
-    .extra_opts    = ts3init_get_puzzle_opts,
+static struct xtables_match ts3init_mt_reg[] =
+{
+    {
+        .name          = "ts3init_get_cookie",
+        .revision      = 0,
+        .family        = NFPROTO_IPV4,
+        .version       = XTABLES_VERSION,
+        .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
+        .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
+        .help          = ts3init_get_cookie_help,
+        .parse         = ts3init_get_cookie_parse,
+        .print         = ts3init_get_cookie_print,
+        .save          = ts3init_get_cookie_save,
+        .extra_opts    = ts3init_get_cookie_opts,
+    },
+    {
+        .name          = "ts3init_get_cookie",
+        .revision      = 0,
+        .family        = NFPROTO_IPV6,
+        .version       = XTABLES_VERSION,
+        .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
+        .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_cookie_mtinfo)),
+        .help          = ts3init_get_cookie_help,
+        .parse         = ts3init_get_cookie_parse,
+        .print         = ts3init_get_cookie_print,
+        .save          = ts3init_get_cookie_save,
+        .extra_opts    = ts3init_get_cookie_opts,
+    },
+    {
+        .name          = "ts3init_get_puzzle",
+        .revision      = 0,
+        .family        = NFPROTO_IPV4,
+        .version       = XTABLES_VERSION,
+        .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
+        .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
+        .help          = ts3init_get_puzzle_help,
+        .parse         = ts3init_get_puzzle_parse,
+        .print         = ts3init_get_puzzle_print,
+        .save          = ts3init_get_puzzle_save,
+        .extra_opts    = ts3init_get_puzzle_opts,
+    },
+    {
+        .name          = "ts3init_get_puzzle",
+        .revision      = 0,
+        .family        = NFPROTO_IPV6,
+        .version       = XTABLES_VERSION,
+        .size          = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
+        .userspacesize = XT_ALIGN(sizeof(struct xt_ts3init_get_puzzle_mtinfo)),
+        .help          = ts3init_get_puzzle_help,
+        .parse         = ts3init_get_puzzle_parse,
+        .print         = ts3init_get_puzzle_print,
+        .save          = ts3init_get_puzzle_save,
+        .extra_opts    = ts3init_get_puzzle_opts,
+    }
 };
 
 static __attribute__((constructor)) void ts3init_mt_ldr(void)
 {
-    xtables_register_match(&ts3init_get_cookie_mt_reg);
-    xtables_register_match(&ts3init_get_puzzle_mt_reg);
+    xtables_register_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
 }
 

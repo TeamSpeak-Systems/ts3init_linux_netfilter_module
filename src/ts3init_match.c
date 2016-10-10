@@ -153,6 +153,12 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
 {
     struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
 
+    if (! (par->family == NFPROTO_IPV4 || par->family == NFPROTO_IPV6))
+    {
+        printk(KERN_INFO KBUILD_MODNAME ": invalid protocol (only ipv4 and ipv6) for get_cookie\n");
+        return -EINVAL;
+    }
+
     if (info->common_options & ~(CHK_COMMON_VALID_MASK))
     {
         printk(KERN_INFO KBUILD_MODNAME ": invalid (common) options for get_cookie\n");
@@ -173,18 +179,18 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
-    
+
     if (!check_header(skb, par, GET_PUZZLE_PAYLOAD_SIZE, &header_data))
         return false;
-        
+
     if (header_data.ts3_header->command != 2) return false;
-    
+
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
         struct ts3init_cache_t* cache;
         struct ts3_init_header* ts3_header = header_data.ts3_header;
-        __u64* cookie_seed;
-        /*__u8  cookie[8];*/
+        __u64* cookie_seed, cookie_seed0, cookie_seed1;
+
         unsigned long jifs;
         time_t current_unix_time;
 
@@ -194,26 +200,30 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
         update_cache_time(jifs, cache);
 
         current_unix_time = cache->unix_time;
-                
+
         cookie_seed = ts3init_get_cookie_seed(current_unix_time,
             ts3_header->payload[8], &cache->cookie_cache,
             info->cookie_seed);
-                    
+
         if (!cookie_seed)
         {
             put_cpu_var(ts3init_cache);
             return false;
         }
-                
+
+        cookie_seed0 = cookie_seed[0];
+        cookie_seed1 = cookie_seed[1];
+
+        put_cpu_var(ts3init_cache);
+
         /* use cookie_seed and ipaddress and port to create a hash
          * (cookie) for this connection */
         /* TODO: implement using sipHash */ 
-        put_cpu_var(ts3init_cache);
 
         /* compare cookie with payload bytes 0-7. if equal, cookie
          * is valid */
         /*if (memcmp(cookie, ts3_header->payload, 8) != 0) return false;*/
-               
+
     }
     return true;
 }
@@ -221,6 +231,13 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
 {
     struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
+    
+        if (! (par->family == NFPROTO_IPV4 || par->family == NFPROTO_IPV6))
+    {
+        printk(KERN_INFO KBUILD_MODNAME ": invalid protocol (only ipv4 and ipv6) for get_puzzle\n");
+        return -EINVAL;
+    }
+
     if (info->common_options & ~(CHK_COMMON_VALID_MASK))
     {
         printk(KERN_INFO KBUILD_MODNAME ": invalid (common) options for get_puzzle\n");
