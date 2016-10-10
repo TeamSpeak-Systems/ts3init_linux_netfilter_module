@@ -4,6 +4,7 @@
    <jeanphilippe.aumasson@gmail.com>
    Copyright (c) 2012-2014 Daniel J. Bernstein <djb@cr.yp.to>
    Copyright (c) 2016 Maximilian Muenchow <maximilian.muenchow@teamspeak.com>
+   Copyright (c) 2016 Niels Werensteijn <niels.werensteijn@teamspeak.com>
    To the extent possible under law, the author(s) have dedicated all copyright
    and related and neighboring rights to this software to the public domain
    worldwide. This software is distributed without any warranty.
@@ -13,7 +14,7 @@
    <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 
-#include <linux/kernel.h>
+#include "siphash24.h"
 
 
 /* default: SipHash-2-4 */
@@ -58,57 +59,129 @@
 #define TRACE
 #endif
 
-// it is assumed that every parameter is in LE
-int ts3init_siphash(u64 *out, const u8 *in, u64 inlen, u64 k0, u64 k1) {
+void ts3init_siphash_setup(struct ts3init_siphash_state* state, u64 k0, u64 k1)
+{
   /* "somepseudorandomlygeneratedbytes" */
-  u64 v0 = 0x736f6d6570736575ULL;
-  u64 v1 = 0x646f72616e646f6dULL;
-  u64 v2 = 0x6c7967656e657261ULL;
-  u64 v3 = 0x7465646279746573ULL;
-  u64 b;
-  u64 m;
-  int i;
-  const u8 *end = in + inlen - (inlen % sizeof(u64));
-  const int left = inlen & 7;
+  state->v0 = 0x736f6d6570736575ULL;
+  state->v1 = 0x646f72616e646f6dULL;
+  state->v2 = 0x6c7967656e657261ULL;
+  state->v3 = 0x7465646279746573ULL;
+  state->len= 0;
   k0 = le64_to_cpu(k0);
   k1 = le64_to_cpu(k1);
-  b = ((u64)inlen) << 56;
-  v3 ^= k1;
-  v2 ^= k0;
-  v1 ^= k1;
-  v0 ^= k0;
+  state->v3 ^= k1;
+  state->v2 ^= k0;
+  state->v1 ^= k1;
+  state->v0 ^= k0;
+}
 
-  for (; in != end; in += 8) {
-    m = U8TO64_LE(in);
-    v3 ^= m;
+void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, size_t inlen)
+{
+    size_t next_byte = state->len % 8;
+    size_t left;
+    const u8* end = in + inlen;
+    int i;
+    u64 m, v0, v1, v2, v3;
 
-    TRACE;
-    for (i = 0; i < cROUNDS; ++i)
-      SIPROUND;
+    state->len += inlen;
+    m = state->m;
+    v0 = state->v0;
+    v1 = state->v1;
+    v2 = state->v2;
+    v3 = state->v3;
+        
+    switch (next_byte)
+    {
+    case 1:
+        m |= ((u64)(*in++)) << 8;
+        if (in==end) goto __exit_update;
+    case 2:
+        m |= ((u64)(*in++)) << 16;
+        if (in==end) goto __exit_update;
+    case 3:
+        m |= ((u64)(*in++)) << 24;
+        if (in==end) goto __exit_update;
+    case 4:
+        m |= ((u64)(*in++)) << 32;
+        if (in==end) goto __exit_update;
+    case 5:
+        m |= ((u64)(*in++)) << 40;
+        if (in==end) goto __exit_update;
+    case 6:
+        m |= ((u64)(*in++)) << 48;
+        if (in==end) goto __exit_update;
+    case 7:
+        m |= ((u64)(*in++)) << 56;
+       
+        v3 ^= m;
 
-    v0 ^= m;
-  }
+        TRACE;
+        for (i = 0; i < cROUNDS; ++i)
+          SIPROUND;
 
-  switch (left) {
-  case 7:
-    b |= ((u64)in[6]) << 48;
-  case 6:
-    b |= ((u64)in[5]) << 40;
-  case 5:
-    b |= ((u64)in[4]) << 32;
-  case 4:
-    b |= ((u64)in[3]) << 24;
-  case 3:
-    b |= ((u64)in[2]) << 16;
-  case 2:
-    b |= ((u64)in[1]) << 8;
-  case 1:
-    b |= ((u64)in[0]);
-    break;
-  case 0:
-    break;
-  }
+        v0 ^= m;
+    case 0:
+        break;
+    }
+    
+    left = (end-in) % 8;
+    end -= left;
+    
+    for (; in != end; in += 8)
+    {
+        m = U8TO64_LE(in);
+        v3 ^= m;
 
+        TRACE;
+        for (i = 0; i < cROUNDS; ++i)
+            SIPROUND;
+
+        v0 ^= m;
+    }
+    
+    m=0;
+    switch(left)
+    {
+        case 7:
+            m |= ((u64)(in[6])) << 48;
+        case 6:
+            m |= ((u64)(in[5])) << 40;
+        case 5:
+            m |= ((u64)(in[4])) << 32;
+        case 4:
+            m |= ((u64)(in[3])) << 24;
+        case 3:
+            m |= ((u64)(in[2])) << 16;
+        case 2:
+            m |= ((u64)(in[1])) << 8;
+        case 1:
+            m |= ((u64)(in[0]));
+        case 0:
+            break;
+    }
+    
+__exit_update:    
+    state->m = m;
+    state->v0 = v0;
+    state->v1 = v1;
+    state->v2 = v2;
+    state->v3 = v3;
+}
+
+u64 ts3init_siphash_finalize(struct ts3init_siphash_state* state)
+{
+  u64 b = state->len << 56;
+  u64 v0, v1, v2, v3;
+  int i;
+
+  b |= state->m;
+
+
+  v0 = state->v0;
+  v1 = state->v1;
+  v2 = state->v2;
+  v3 = state->v3;
+  
   v3 ^= b;
 
   TRACE;
@@ -123,9 +196,6 @@ int ts3init_siphash(u64 *out, const u8 *in, u64 inlen, u64 k0, u64 k1) {
     SIPROUND;
 
   b = v0 ^ v1 ^ v2 ^ v3;
-  *out = cpu_to_le64(b);
-
-
-  return 0;
+  return cpu_to_le64(b);
 }
 

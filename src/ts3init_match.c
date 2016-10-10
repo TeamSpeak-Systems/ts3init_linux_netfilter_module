@@ -190,6 +190,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
         struct ts3init_cache_t* cache;
         struct ts3_init_header* ts3_header = header_data.ts3_header;
         __u64* cookie_seed, cookie_seed0, cookie_seed1;
+        __u64 cookie, packet_cookie;
 
         unsigned long jifs;
         time_t current_unix_time;
@@ -218,12 +219,18 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
         /* use cookie_seed and ipaddress and port to create a hash
          * (cookie) for this connection */
-        /* TODO: implement using sipHash */ 
+        if (ts3init_calculate_cookie(skb, par, header_data.udp, cookie_seed0, cookie_seed1, &cookie))
+            return false; /*something went wrong*/
 
         /* compare cookie with payload bytes 0-7. if equal, cookie
          * is valid */
-        /*if (memcmp(cookie, ts3_header->payload, 8) != 0) return false;*/
-
+         
+        packet_cookie = (((u64)((ts3_header->payload)[0])) | ((u64)((ts3_header->payload)[1]) << 8) |
+           ((u64)((ts3_header->payload)[2]) << 16) | ((u64)((ts3_header->payload)[3]) << 24) |
+           ((u64)((ts3_header->payload)[4]) << 32) | ((u64)((ts3_header->payload)[5]) << 40) |
+           ((u64)((ts3_header->payload)[6]) << 48) | ((u64)((ts3_header->payload)[7]) << 56));
+           
+        if (packet_cookie != cookie) return false;
     }
     return true;
 }

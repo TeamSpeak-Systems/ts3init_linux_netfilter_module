@@ -16,6 +16,8 @@
 #include <linux/crypto.h>
 #include <linux/err.h>
 #include <linux/scatterlist.h>
+#include <linux/netfilter/x_tables.h>
+#include "siphash24.h"
 #include "ts3init_cookie.h"
 
 static void check_update_seed_cache(time_t time, __u8 index, 
@@ -80,7 +82,7 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
     /* get cache time of packet */
     current_cache_time = current_time & ~((time_t)3);
     packet_cache_time = current_cache_time 
-		- ((current_cache_index ^ packet_cache_index)*4);
+        - ((current_cache_index ^ packet_cache_index)*4);
 
     /* make sure the cache is up-to-date */
     check_update_seed_cache(packet_cache_time, packet_cache_index, cache,
@@ -90,3 +92,41 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
     return cache->seed64 + ((SIP_KEY_SIZE/sizeof(__u64)) * packet_index );
 }
 
+int ts3init_calculate_cookie(const struct sk_buff *skb, struct xt_action_param *par, struct udphdr *udp, u64 k0, u64 k1, __u64* out)
+{
+    int addr_offset;
+    int addr_len;
+    void* addr_data;
+    __u8 addr_buf[2*16];
+    struct ts3init_siphash_state hash_state;
+
+    switch (par->family)
+    {
+    case NFPROTO_IPV4:
+        addr_offset = 12; /*offset to src and dst address in ipv4 header */
+        addr_len = 2*4; /*size of ipv4 address is 4 bytes */
+        break;
+
+    case NFPROTO_IPV6:
+        addr_offset = 8; /*offset to src and dst address in ipv6 header */
+        addr_len = 2*16; /*size of ipv6 address is 16 bytes */
+        break;
+    default:
+        printk(KERN_ERR KBUILD_MODNAME ": invalid family\n");
+        return -EINVAL;
+    }
+
+    addr_data = skb_header_pointer(skb, skb->network_header+addr_offset, addr_len, addr_buf);
+    if (!addr_data)
+    {
+        printk(KERN_ERR KBUILD_MODNAME ": could not load ip addresses\n");
+        return -EINVAL;
+    }
+ 
+    ts3init_siphash_setup(&hash_state, k0, k1);
+    ts3init_siphash_update(&hash_state, (u8 *)addr_data, addr_len);
+    ts3init_siphash_update(&hash_state, (u8 *)&udp->source, 4);
+    *out = ts3init_siphash_finalize(&hash_state);
+    
+    return 0;
+}
