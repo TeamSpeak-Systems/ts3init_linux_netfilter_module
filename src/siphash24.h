@@ -26,7 +26,6 @@
 #define printk printf
 #define le64_to_cpu(x) x
 #define cpu_to_le64(x) x
-#define inline static inline
 #else
 #include <linux/kernel.h>
 #endif

@@ -31,7 +31,7 @@
 
 
 bool
-send_ipv6(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 command, const void *payload, const size_t payload_size)
+ts3init_send_ipv6(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 command, const void *payload, const size_t payload_size)
 {
     const struct udphdr *oldudp;
     const struct ipv6hdr *oldip;
@@ -113,7 +113,7 @@ send_ipv6(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 co
 }
 
 bool
-send_ipv4(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 command, const void *payload, const size_t payload_size)
+ts3init_send_ipv4(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 command, const void *payload, const size_t payload_size)
 {
     const struct udphdr *oldudp;
     const struct iphdr *oldip;
@@ -185,7 +185,7 @@ send_ipv4(const struct sk_buff *oldskb, const struct xt_action_param *par, u8 co
     return false;
 }
 
-static const char reset_package[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET_PUZZLE, 0 };
+static const char ts3init_reset_package[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET_PUZZLE, 0 };
 
 static unsigned int
 ts3init_reset_tg(struct sk_buff *skb, const struct xt_action_param *par)
@@ -193,11 +193,11 @@ ts3init_reset_tg(struct sk_buff *skb, const struct xt_action_param *par)
     switch (par->family)
     {
         case NFPROTO_IPV4:
-            send_ipv4(skb, par, COMMAND_RESET_PUZZLE, reset_package, sizeof(reset_package));
+            ts3init_send_ipv4(skb, par, COMMAND_RESET_PUZZLE, ts3init_reset_package, sizeof(ts3init_reset_package));
             break;
 
         case NFPROTO_IPV6:
-            send_ipv6(skb, par, COMMAND_RESET_PUZZLE, reset_package, sizeof(reset_package));
+            ts3init_send_ipv6(skb, par, COMMAND_RESET_PUZZLE, ts3init_reset_package, sizeof(ts3init_reset_package));
             break;
     }
     return NF_DROP;
@@ -223,12 +223,12 @@ static struct xt_target ts3init_tg_reg[] __read_mostly =
     },
 };
 
-int __init ts3init_target_init(void)
+int ts3init_target_init(void)
 {
     return xt_register_targets(ts3init_tg_reg, ARRAY_SIZE(ts3init_tg_reg));
 }
 
-void __exit ts3init_target_exit(void)
+void ts3init_target_exit(void)
 {
     xt_unregister_targets(ts3init_tg_reg, ARRAY_SIZE(ts3init_tg_reg));
 }

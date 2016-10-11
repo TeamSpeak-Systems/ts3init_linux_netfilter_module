@@ -34,18 +34,18 @@ static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
 static const int header_size = 18;
-static int payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
+static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 	
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
-bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
+static bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
     struct ts3_init_checked_header_data* header_data)
 {
     unsigned int data_len;
     struct udphdr *udp;
     struct ts3_init_header* ts3_header;
     int expected_payload_size;
-    
+
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
@@ -64,9 +64,9 @@ bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
 	if (ts3_header->command >= COMMAND_MAX) return false;
 
     /* TODO: check min_client_version if needed */
-    	
+
 	/* TODO: add payload size check for COMMAND_SOLVE_PUZZLE */
-	expected_payload_size = payload_sizes[ts3_header->command];
+	expected_payload_size = ts3init_payload_sizes[ts3_header->command];
     if (data_len != header_size + expected_payload_size) return false;
 
     header_data->udp = udp;    
@@ -93,12 +93,12 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
-    
+
     if (!check_header(skb, par, &header_data))
         return false;
-        
+
     if (header_data.ts3_header->command != COMMAND_GET_COOKIE) return false;
-        
+
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
         struct ts3init_cache_t* cache;
@@ -106,13 +106,13 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
         time_t current_unix_time, packet_unix_time;
 
         jifs = jiffies;
-                
+
         cache = &get_cpu_var(ts3init_cache);
-                
+
         update_cache_time(jifs, cache);
-                
+
         current_unix_time = cache->unix_time;
-                
+
         put_cpu_var(ts3init_cache);
 
         packet_unix_time =
@@ -148,9 +148,9 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
         printk(KERN_INFO KBUILD_MODNAME ": invalid (specific) options for get_cookie\n");
         return -EINVAL;
     }
-    
+
     return 0;
-}    
+}
 
 static bool
 ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
@@ -202,12 +202,12 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
         /* compare cookie with payload bytes 0-7. if equal, cookie
          * is valid */
-         
+
         packet_cookie = (((u64)((ts3_header->payload)[0])) | ((u64)((ts3_header->payload)[1]) << 8) |
            ((u64)((ts3_header->payload)[2]) << 16) | ((u64)((ts3_header->payload)[3]) << 24) |
            ((u64)((ts3_header->payload)[4]) << 32) | ((u64)((ts3_header->payload)[5]) << 40) |
            ((u64)((ts3_header->payload)[6]) << 48) | ((u64)((ts3_header->payload)[7]) << 56));
-           
+
         if (packet_cookie != cookie) return false;
     }
     return true;
@@ -216,7 +216,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
 {
     struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
-    
+
         if (! (par->family == NFPROTO_IPV4 || par->family == NFPROTO_IPV6))
     {
         printk(KERN_INFO KBUILD_MODNAME ": invalid protocol (only ipv4 and ipv6) for get_puzzle\n");
@@ -234,12 +234,13 @@ static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
         printk(KERN_INFO KBUILD_MODNAME ": invalid (specific) options for get_cookie\n");
         return -EINVAL;
     }
-    
+
     return 0;
-}    
+}
 
 
-static struct xt_match ts3init_mt_reg[] __read_mostly = {
+static struct xt_match ts3init_mt_reg[] __read_mostly =
+{
     {
         .name       = "ts3init_get_cookie",
         .revision   = 0,
@@ -282,12 +283,12 @@ static struct xt_match ts3init_mt_reg[] __read_mostly = {
     },
 };
 
-int __init ts3init_match_init(void)
+int ts3init_match_init(void)
 {
     return xt_register_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
 }
 
-void __exit ts3init_match_exit(void)
+void ts3init_match_exit(void)
 {
     xt_unregister_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
 }

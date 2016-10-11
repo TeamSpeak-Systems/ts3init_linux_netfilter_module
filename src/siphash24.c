@@ -25,12 +25,12 @@ enum
     ts3init_dROUNDS = 4
 };
 
-inline u64 ts3init_ROTL(u64 x, int b)
+static inline u64 ts3init_ROTL(u64 x, int b)
 {
     return (x << b) | (x >> (64 - b));
 }
 
-inline u64 ts3init_U8TO64_LE(const u8* p)
+static inline u64 ts3init_U8TO64_LE(const u8* p)
 {
     return (((u64)(p[0])) | ((u64)(p[1]) << 8) |
    ((u64)(p[2]) << 16) | ((u64)(p[3]) << 24) |
@@ -38,7 +38,7 @@ inline u64 ts3init_U8TO64_LE(const u8* p)
    ((u64)(p[6]) << 48) | ((u64)(p[7]) << 56));
 }
 
-inline void ts3init_SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
+static inline void ts3init_SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
 {
     *v0 += *v1;
     *v1 = ts3init_ROTL(*v1, 13);
@@ -57,7 +57,7 @@ inline void ts3init_SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
 }
 
 
-inline void ts3init_TRACE(u64 v0, u64 v1, u64 v2, u64 v3, size_t inlen)
+static inline void ts3init_TRACE(u64 v0, u64 v1, u64 v2, u64 v3, size_t inlen)
 {
 #ifdef DEBUG
     printk("(%d) v0 %x %x\n", (int)inlen, (u32)(v0 >> 32), (u32)v0);
