@@ -1,0 +1,10 @@
+*.o.cmd
+*.ko.cmd
+*.o
+*.so
+*.S
+*.ko
+/xt_ts3init.mod.c
+*.symvers
+*.order
+/.tmp_versions
