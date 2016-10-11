@@ -35,7 +35,7 @@ static const struct ts3_init_header_tag ts3init_header_tag_signature =
 
 static const int header_size = 18;
 static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
-	
+
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
 static bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
@@ -49,7 +49,9 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len < header_size) return false;
+    if (data_len < header_size ||
+        data_len > sizeof(header_data->ts3_header_buf))
+        return false;
 
     ts3_header = (struct ts3_init_header*) skb_header_pointer(skb, 
         par->thoff + sizeof(*udp), data_len,
@@ -61,7 +63,7 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     if (ts3_header->packet_id != cpu_to_be16(101)) return false;
     if (ts3_header->client_id != 0) return false;
     if (ts3_header->flags != 0x88) return false;
-	if (ts3_header->command >= COMMAND_MAX) return false;
+    if (ts3_header->command >= COMMAND_MAX) return false;
 
     /* check min_client_version if needed */
     if (min_client_version)
@@ -78,7 +80,7 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     }
 
 	/* payload size check*/
-	expected_payload_size = ts3init_payload_sizes[ts3_header->command];
+    expected_payload_size = ts3init_payload_sizes[ts3_header->command];
     if (data_len != header_size + expected_payload_size) return false;
 
     header_data->udp = udp;    
