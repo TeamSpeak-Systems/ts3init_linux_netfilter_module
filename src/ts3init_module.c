@@ -20,6 +20,11 @@
 int __init ts3init_match_init(void);
 void __exit ts3init_match_exit(void);
 
+/* defined in ts3init_target.c */
+int __init ts3init_target_init(void);
+void __exit ts3init_target_exit(void);
+
+
 MODULE_AUTHOR("Niels Werensteijn <niels.werensteijn@teamspeak.com>");
 MODULE_DESCRIPTION("A module to aid in ts3 spoof protection");
 MODULE_LICENSE("GPL");
@@ -28,12 +33,18 @@ MODULE_ALIAS("ip6t_ts3init");
 
 static int __init ts3init_init(void)
 {
-    return ts3init_match_init();
+	int error;
+	error = ts3init_match_init();
+	if (error)
+		return error; 
+	error = ts3init_target_init();
+	return error;
 }
 
 static void __exit ts3init_exit(void)
 {
     ts3init_match_exit();
+	ts3init_target_exit();
 }
 
 module_init(ts3init_init);
