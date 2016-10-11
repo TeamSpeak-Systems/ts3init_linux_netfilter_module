@@ -17,9 +17,19 @@
    this software. If not, see
    <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
-
+#ifndef __KERNEL__
+#include <stdint.h>
+#include <stdio.h>
+#define u8 uint8_t
+#define u32 uint32_t
+#define u64 uint64_t
+#define printk printf
+#define le64_to_cpu(x) x
+#define cpu_to_le64(x) x
+#define inline static inline
+#else
 #include <linux/kernel.h>
-#include <linux/udp.h>
+#endif
 
 struct ts3init_siphash_state
 {

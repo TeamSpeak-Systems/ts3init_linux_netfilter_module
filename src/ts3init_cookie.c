@@ -17,6 +17,7 @@
 #include <linux/err.h>
 #include <linux/scatterlist.h>
 #include <linux/netfilter/x_tables.h>
+#include <linux/udp.h>
 #include "siphash24.h"
 #include "ts3init_cookie.h"
 

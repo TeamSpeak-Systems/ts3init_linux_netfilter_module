@@ -101,24 +101,25 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
     switch (next_byte)
     {
     case 1:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 8;
-        if (in==end) goto __exit_update;
     case 2:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 16;
-        if (in==end) goto __exit_update;
     case 3:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 24;
-        if (in==end) goto __exit_update;
     case 4:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 32;
-        if (in==end) goto __exit_update;
     case 5:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 40;
-        if (in==end) goto __exit_update;
     case 6:
-        m |= ((u64)(*in++)) << 48;
         if (in==end) goto __exit_update;
+        m |= ((u64)(*in++)) << 48;
     case 7:
+        if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 56;
 
         v3 ^= m;
