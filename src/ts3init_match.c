@@ -39,7 +39,7 @@ static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
 static bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
-    struct ts3_init_checked_header_data* header_data)
+    struct ts3_init_checked_header_data* header_data, __u32 min_client_version)
 {
     unsigned int data_len;
     struct udphdr *udp;
@@ -63,9 +63,21 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     if (ts3_header->flags != 0x88) return false;
 	if (ts3_header->command >= COMMAND_MAX) return false;
 
-    /* TODO: check min_client_version if needed */
+    /* check min_client_version if needed */
+    if (min_client_version)
+    {
+        /* the client version is unaligned in the packet.
+         * load it byte for byte. big endian*/
+        __u8* v = ts3_header->client_version;
+        __u32 packet_min_client_version =
+            ((__u32)v[0]) << 24 | ((__u32)v[1]) << 16 |
+            ((__u32)v[1]) <<  8 | ((__u32)v[3]);
 
-	/* TODO: add payload size check for COMMAND_SOLVE_PUZZLE */
+        if (packet_min_client_version < min_client_version)
+            return false;
+    }
+
+	/* payload size check*/
 	expected_payload_size = ts3init_payload_sizes[ts3_header->command];
     if (data_len != header_size + expected_payload_size) return false;
 
@@ -94,7 +106,7 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
     const struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
 
-    if (!check_header(skb, par, &header_data))
+    if (!check_header(skb, par, &header_data, info->min_client_version))
         return false;
 
     if (header_data.ts3_header->command != COMMAND_GET_COOKIE) return false;
@@ -158,7 +170,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
 
-    if (!check_header(skb, par, &header_data))
+    if (!check_header(skb, par, &header_data, info->min_client_version))
         return false;
 
     if (header_data.ts3_header->command != COMMAND_GET_PUZZLE) return false;
