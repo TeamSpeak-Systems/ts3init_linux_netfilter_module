@@ -36,15 +36,19 @@ static int __init ts3init_init(void)
 	int error;
 	error = ts3init_match_init();
 	if (error)
-		return error; 
+        return error;
+
 	error = ts3init_target_init();
+	if (error)
+        ts3init_match_exit();
+
 	return error;
 }
 
 static void __exit ts3init_exit(void)
 {
     ts3init_match_exit();
-	ts3init_target_exit();
+    ts3init_target_exit();
 }
 
 module_init(ts3init_init);
