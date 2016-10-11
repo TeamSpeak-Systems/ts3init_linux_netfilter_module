@@ -1,5 +1,14 @@
 CFLAGS = -O2 -Wall
+LIBS = libxt_ts3init_get_cookie.so libxt_ts3init_get_puzzle.so libxt_ts3init_reset.so 
 
+all: $(LIBS)
+
+clean:
+	rm -f $(LIBS)
+
+install:
+	cp $(LIBS) /lib/xtables/
+	
 lib%.so: lib%.o
 	gcc -shared -fPIC -o $@ $^;
 

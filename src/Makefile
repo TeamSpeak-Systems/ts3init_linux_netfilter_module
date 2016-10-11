@@ -4,11 +4,9 @@ KERNEL_DIR := ${MODULES_DIR}/build
 
 obj-m += xt_ts3init.o
 xt_ts3init-objs += ts3init_module.o ts3init_match.o ts3init_cookie.o ts3init_target.o siphash24.o
-so = libxt_ts3init_get_cookie.so libxt_ts3init_get_puzzle.so libxt_ts3init_reset.so 
 
 all:
 	$(MAKE) -C ${KERNEL_DIR} M=$$PWD;
-	$(MAKE) -f Makefile.xtables $(so)
 
 modules:
 	$(MAKE) -C ${KERNEL_DIR} M=$$PWD $@;
@@ -18,5 +16,3 @@ modules_install:
 
 clean:
 	$(MAKE) -C ${KERNEL_DIR} M=$$PWD $@;
-	rm $(so)
-
