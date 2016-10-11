@@ -24,38 +24,28 @@ static void ts3init_reset_help(void)
 }
 
 static int ts3init_reset_parse(int c, char **argv, int invert, unsigned int *flags,
-                           const void *entry, struct xt_entry_target **targetinfo)
+                               const void *entry, struct xt_entry_target **target)
 {
 	return false;
 }
 
-/* register and init */
-static struct xtables_target ts3init_tg_reg[] =
+static void ts3init_reset_check(unsigned int flags)
 {
-    {
-        .name          = "ts3init_reset",
-        .revision      = 0,
-        .family        = NFPROTO_IPV4,
-        .version       = XTABLES_VERSION,
-        .size          = 0,
-        .userspacesize = 0,
-        .help          = ts3init_reset_help,
-        .parse         = ts3init_reset_parse,
-    },
-    {
-        .name          = "ts3init_reset",
-        .revision      = 0,
-        .family        = NFPROTO_IPV6,
-        .version       = XTABLES_VERSION,
-        .size          = 0,
-        .userspacesize = 0,
-        .help          = ts3init_reset_help,
-        .parse         = ts3init_reset_parse,
-    },
-};
-
-static __attribute__((constructor)) void ts3init_tg_ldr(void)
-{
-    xtables_register_targets(ts3init_tg_reg, ARRAY_SIZE(ts3init_tg_reg));
 }
 
+/* register and init */
+static struct xtables_target ts3init_reset_tg_reg =
+{
+	.name          = "ts3init_reset",
+	.revision      = 0,
+	.family        = NFPROTO_UNSPEC,
+	.version       = XTABLES_VERSION,
+	.help          = ts3init_reset_help,
+	.parse         = ts3init_reset_parse,
+	.final_check   = ts3init_reset_check,
+};
+
+static __attribute__((constructor)) void ts3init_reset_tg_ldr(void)
+{
+    xtables_register_target(&ts3init_reset_tg_reg);
+}
