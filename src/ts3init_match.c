@@ -5,7 +5,7 @@
  *                 This is the "match" code
  *
  *    Authors:
- *    Niels Werensteijn <niels werensteijn [at] teampseak com>, 2016-10-03
+ *    Niels Werensteijn <niels werensteijn [at] teamspeak com>, 2016-10-03
  *
  *    This program is free software; you can redistribute it and/or modify it
  *    under the terms of the GNU General Public License; either version 2
