@@ -18,34 +18,42 @@
 
 
 /* default: SipHash-2-4 */
-#define cROUNDS 2
-#define dROUNDS 4
+enum
+{
+    ts3init_cROUNDS = 2,
+    ts3init_dROUNDS = 4
+};
 
-#define ROTL(x, b) (u64)(((x) << (b)) | ((x) >> (64 - (b))))
+inline u64 ROTL(u64 x, int b)
+{
+    return (x << b) | (x >> (64 - b));
+}
 
-#define U8TO64_LE(p)                                                           \
-  (((u64)((p)[0])) | ((u64)((p)[1]) << 8) |                                    \
-   ((u64)((p)[2]) << 16) | ((u64)((p)[3]) << 24) |                             \
-   ((u64)((p)[4]) << 32) | ((u64)((p)[5]) << 40) |                             \
-   ((u64)((p)[6]) << 48) | ((u64)((p)[7]) << 56))
+inline u64 U8TO64_LE(const u8* p)
+{
+    return (((u64)(p[0])) | ((u64)(p[1]) << 8) |
+   ((u64)(p[2]) << 16) | ((u64)(p[3]) << 24) |
+   ((u64)(p[4]) << 32) | ((u64)(p[5]) << 40) |
+   ((u64)(p[6]) << 48) | ((u64)(p[7]) << 56));
+}
 
-#define SIPROUND                                                               \
-  do {                                                                         \
-    v0 += v1;                                                                  \
-    v1 = ROTL(v1, 13);                                                         \
-    v1 ^= v0;                                                                  \
-    v0 = ROTL(v0, 32);                                                         \
-    v2 += v3;                                                                  \
-    v3 = ROTL(v3, 16);                                                         \
-    v3 ^= v2;                                                                  \
-    v0 += v3;                                                                  \
-    v3 = ROTL(v3, 21);                                                         \
-    v3 ^= v0;                                                                  \
-    v2 += v1;                                                                  \
-    v1 = ROTL(v1, 17);                                                         \
-    v1 ^= v2;                                                                  \
-    v2 = ROTL(v2, 32);                                                         \
-  } while (0)
+inline void SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
+{
+    *v0 += *v1;
+    *v1 = ROTL(*v1, 13);
+    *v1 ^= *v0;
+    *v0 = ROTL(*v0, 32);
+    *v2 += *v3;
+    *v3 = ROTL(*v3, 16);
+    *v3 ^= *v2;
+    *v0 += *v3;
+    *v3 = ROTL(*v3, 21);
+    *v3 ^= *v0;
+    *v2 += *v1;
+    *v1 = ROTL(*v1, 17);
+    *v1 ^= *v2;
+    *v2 = ROTL(*v2, 32); 
+}
 
 #ifdef DEBUG
 #define TRACE                                                                  \
@@ -116,8 +124,8 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
         v3 ^= m;
 
         TRACE;
-        for (i = 0; i < cROUNDS; ++i)
-          SIPROUND;
+        for (i = 0; i < ts3init_cROUNDS; ++i)
+          SIPROUND(&v0, &v1, &v2, &v3);
 
         v0 ^= m;
     case 0:
@@ -133,8 +141,8 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
         v3 ^= m;
 
         TRACE;
-        for (i = 0; i < cROUNDS; ++i)
-            SIPROUND;
+        for (i = 0; i < ts3init_cROUNDS; ++i)
+            SIPROUND(&v0, &v1, &v2, &v3);
 
         v0 ^= m;
     }
@@ -185,15 +193,15 @@ u64 ts3init_siphash_finalize(struct ts3init_siphash_state* state)
   v3 ^= b;
 
   TRACE;
-  for (i = 0; i < cROUNDS; ++i)
-    SIPROUND;
+  for (i = 0; i < ts3init_cROUNDS; ++i)
+    SIPROUND(&v0, &v1, &v2, &v3);
 
   v0 ^= b;
   v2 ^= 0xff;
 
   TRACE;
-  for (i = 0; i < dROUNDS; ++i)
-    SIPROUND;
+  for (i = 0; i < ts3init_dROUNDS; ++i)
+    SIPROUND(&v0, &v1, &v2, &v3);
 
   b = v0 ^ v1 ^ v2 ^ v3;
   return cpu_to_le64(b);
