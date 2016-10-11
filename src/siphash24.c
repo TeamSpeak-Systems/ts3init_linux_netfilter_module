@@ -3,8 +3,9 @@
    Copyright (c) 2012-2014 Jean-Philippe Aumasson
    <jeanphilippe.aumasson@gmail.com>
    Copyright (c) 2012-2014 Daniel J. Bernstein <djb@cr.yp.to>
-   Copyright (c) 2016 Maximilian Muenchow <maximilian.muenchow@teamspeak.com>
-   Copyright (c) 2016 Niels Werensteijn <niels.werensteijn@teamspeak.com>
+   Modified by TeamSpeak Systems for use in ts3init kernel module
+   Copyright (c) 2016 Maximilian Muenchow <maximilian muenchow [at] teamspeak.com>
+   Copyright (c) 2016 Niels Werensteijn <niels werensteijn [at] teamspeak.com>
    To the extent possible under law, the author(s) have dedicated all copyright
    and related and neighboring rights to this software to the public domain
    worldwide. This software is distributed without any warranty.
@@ -24,12 +25,12 @@ enum
     ts3init_dROUNDS = 4
 };
 
-inline u64 ROTL(u64 x, int b)
+inline u64 ts3init_ROTL(u64 x, int b)
 {
     return (x << b) | (x >> (64 - b));
 }
 
-inline u64 U8TO64_LE(const u8* p)
+inline u64 ts3init_U8TO64_LE(const u8* p)
 {
     return (((u64)(p[0])) | ((u64)(p[1]) << 8) |
    ((u64)(p[2]) << 16) | ((u64)(p[3]) << 24) |
@@ -37,35 +38,34 @@ inline u64 U8TO64_LE(const u8* p)
    ((u64)(p[6]) << 48) | ((u64)(p[7]) << 56));
 }
 
-inline void SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
+inline void ts3init_SIPROUND(u64* v0, u64* v1, u64* v2, u64* v3)
 {
     *v0 += *v1;
-    *v1 = ROTL(*v1, 13);
+    *v1 = ts3init_ROTL(*v1, 13);
     *v1 ^= *v0;
-    *v0 = ROTL(*v0, 32);
+    *v0 = ts3init_ROTL(*v0, 32);
     *v2 += *v3;
-    *v3 = ROTL(*v3, 16);
+    *v3 = ts3init_ROTL(*v3, 16);
     *v3 ^= *v2;
     *v0 += *v3;
-    *v3 = ROTL(*v3, 21);
+    *v3 = ts3init_ROTL(*v3, 21);
     *v3 ^= *v0;
     *v2 += *v1;
-    *v1 = ROTL(*v1, 17);
+    *v1 = ts3init_ROTL(*v1, 17);
     *v1 ^= *v2;
-    *v2 = ROTL(*v2, 32); 
+    *v2 = ts3init_ROTL(*v2, 32); 
 }
 
+
+inline void ts3init_TRACE(u64 v0, u64 v1, u64 v2, u64 v3, size_t inlen)
+{
 #ifdef DEBUG
-#define TRACE                                                                  \
-  do {                                                                         \
-    printk("(%d) v0 %x %x\n", (int)inlen, (u32)(v0 >> 32), (u32)v0);           \
-    printk("(%d) v1 %x %x\n", (int)inlen, (u32)(v1 >> 32), (u32)v1);           \
-    printk("(%d) v2 %x %x\n", (int)inlen, (u32)(v2 >> 32), (u32)v2);           \
-    printk("(%d) v3 %x %x\n", (int)inlen, (u32)(v3 >> 32), (u32)v3);           \
-  } while (0)
-#else
-#define TRACE
+    printk("(%d) v0 %x %x\n", (int)inlen, (u32)(v0 >> 32), (u32)v0);
+    printk("(%d) v1 %x %x\n", (int)inlen, (u32)(v1 >> 32), (u32)v1);
+    printk("(%d) v2 %x %x\n", (int)inlen, (u32)(v2 >> 32), (u32)v2);
+    printk("(%d) v3 %x %x\n", (int)inlen, (u32)(v3 >> 32), (u32)v3);
 #endif
+}
 
 void ts3init_siphash_setup(struct ts3init_siphash_state* state, u64 k0, u64 k1)
 {
@@ -97,7 +97,7 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
     v1 = state->v1;
     v2 = state->v2;
     v3 = state->v3;
-        
+
     switch (next_byte)
     {
     case 1:
@@ -120,33 +120,33 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
         if (in==end) goto __exit_update;
     case 7:
         m |= ((u64)(*in++)) << 56;
-       
+
         v3 ^= m;
 
-        TRACE;
+        ts3init_TRACE(v0, v1, v2, v3, inlen);
         for (i = 0; i < ts3init_cROUNDS; ++i)
-          SIPROUND(&v0, &v1, &v2, &v3);
+          ts3init_SIPROUND(&v0, &v1, &v2, &v3);
 
         v0 ^= m;
     case 0:
         break;
     }
-    
+
     left = (end-in) % 8;
     end -= left;
-    
+
     for (; in != end; in += 8)
     {
-        m = U8TO64_LE(in);
+        m = ts3init_U8TO64_LE(in);
         v3 ^= m;
 
-        TRACE;
+        ts3init_TRACE(v0, v1, v2, v3, inlen);
         for (i = 0; i < ts3init_cROUNDS; ++i)
-            SIPROUND(&v0, &v1, &v2, &v3);
+            ts3init_SIPROUND(&v0, &v1, &v2, &v3);
 
         v0 ^= m;
     }
-    
+
     m=0;
     switch(left)
     {
@@ -167,8 +167,8 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
         case 0:
             break;
     }
-    
-__exit_update:    
+
+__exit_update:
     state->m = m;
     state->v0 = v0;
     state->v1 = v1;
@@ -189,21 +189,20 @@ u64 ts3init_siphash_finalize(struct ts3init_siphash_state* state)
   v1 = state->v1;
   v2 = state->v2;
   v3 = state->v3;
-  
+
   v3 ^= b;
 
-  TRACE;
+  ts3init_TRACE(v0, v1, v2, v3, state->len);
   for (i = 0; i < ts3init_cROUNDS; ++i)
-    SIPROUND(&v0, &v1, &v2, &v3);
+    ts3init_SIPROUND(&v0, &v1, &v2, &v3);
 
   v0 ^= b;
   v2 ^= 0xff;
 
-  TRACE;
+  ts3init_TRACE(v0, v1, v2, v3, state->len);
   for (i = 0; i < ts3init_dROUNDS; ++i)
-    SIPROUND(&v0, &v1, &v2, &v3);
+    ts3init_SIPROUND(&v0, &v1, &v2, &v3);
 
   b = v0 ^ v1 ^ v2 ^ v3;
   return cpu_to_le64(b);
 }
-

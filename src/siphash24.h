@@ -6,8 +6,9 @@
    Copyright (c) 2012-2014 Jean-Philippe Aumasson
    <jeanphilippe.aumasson@gmail.com>
    Copyright (c) 2012-2014 Daniel J. Bernstein <djb@cr.yp.to>
-   Copyright (c) 2016 Maximilian Muenchow <maximilian.muenchow@teamspeak.com>
-   Copyright (c) 2016 Niels Werensteijn <niels.werensteijn@teamspeak.com>
+   Modified by TeamSpeak Systems for use in ts3init kernel module
+   Copyright (c) 2016 Maximilian Muenchow <maximilian muenchow [at] teamspeak.com>
+   Copyright (c) 2016 Niels Werensteijn <niels werensteijn [at] teamspeak.com>
    To the extent possible under law, the author(s) have dedicated all copyright
    and related and neighboring rights to this software to the public domain
    worldwide. This software is distributed without any warranty.
@@ -27,7 +28,7 @@ struct ts3init_siphash_state
   u64 v2;
   u64 v3;
   u64 m;
-  size_t len;	
+  size_t len;
 };
 
 void ts3init_siphash_setup(struct ts3init_siphash_state* state, u64 k0, u64 k1);
@@ -35,4 +36,3 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
 u64 ts3init_siphash_finalize(struct ts3init_siphash_state* state);
 
 #endif /*_TS3INIT_SIPHASH_H*/
-
