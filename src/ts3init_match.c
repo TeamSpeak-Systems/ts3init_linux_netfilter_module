@@ -21,6 +21,7 @@
 #include <linux/percpu.h>
 #include "ts3init_match.h"
 #include "ts3init_cookie.h"
+#include "ts3init_header.h"
 
 struct ts3init_cache_t
 {
@@ -29,54 +30,26 @@ struct ts3init_cache_t
     struct xt_ts3init_cookie_cache cookie_cache;
 };        
 
-struct ts3_init_header_tag
-{
-    union
-    {
-        char          tag8[8];
-        __aligned_u64 tag64;
-    };
-};
-
-struct ts3_init_header
-{
-    struct ts3_init_header_tag tag;
-    __be16 packet_id;
-    __be16 client_id;
-    __u8   flags;
-    __u8   client_version[4];
-    __u8   command;
-    __u8   payload[20];
-};
-
-struct ts3_init_checked_header_data
-{
-    struct udphdr *udp, udp_buf;
-    struct ts3_init_header* ts3_header, ts3_header_buf;
-};
-
-enum
-{
-    GET_COOKIE_PAYLOAD_SIZE = 34,
-    GET_PUZZLE_PAYLOAD_SIZE = 38
-};
-
 static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
+static const int header_size = 18;
+static int payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
+	
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
-static inline bool check_header(const struct sk_buff *skb, struct xt_action_param *par,
-    int payload_size, struct ts3_init_checked_header_data* header_data)
+bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
+    struct ts3_init_checked_header_data* header_data)
 {
     unsigned int data_len;
     struct udphdr *udp;
     struct ts3_init_header* ts3_header;
+    int expected_payload_size;
     
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len != payload_size) return false;
+    if (data_len < header_size) return false;
 
     ts3_header = (struct ts3_init_header*) skb_header_pointer(skb, 
         par->thoff + sizeof(*udp), data_len,
@@ -88,9 +61,14 @@ static inline bool check_header(const struct sk_buff *skb, struct xt_action_para
     if (ts3_header->packet_id != cpu_to_be16(101)) return false;
     if (ts3_header->client_id != 0) return false;
     if (ts3_header->flags != 0x88) return false;
+	if (ts3_header->command >= COMMAND_MAX) return false;
 
     /* TODO: check min_client_version if needed */
-    
+    	
+	/* TODO: add payload size check for COMMAND_SOLVE_PUZZLE */
+	expected_payload_size = payload_sizes[ts3_header->command];
+    if (data_len != header_size + expected_payload_size) return false;
+
     header_data->udp = udp;    
     header_data->ts3_header = ts3_header;
     return true;
@@ -116,10 +94,10 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
     const struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
     
-    if (!check_header(skb, par, GET_COOKIE_PAYLOAD_SIZE, &header_data))
+    if (!check_header(skb, par, &header_data))
         return false;
         
-    if (header_data.ts3_header->command != 0) return false;
+    if (header_data.ts3_header->command != COMMAND_GET_COOKIE) return false;
         
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
@@ -180,10 +158,10 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
 
-    if (!check_header(skb, par, GET_PUZZLE_PAYLOAD_SIZE, &header_data))
+    if (!check_header(skb, par, &header_data))
         return false;
 
-    if (header_data.ts3_header->command != 2) return false;
+    if (header_data.ts3_header->command != COMMAND_GET_PUZZLE) return false;
 
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
