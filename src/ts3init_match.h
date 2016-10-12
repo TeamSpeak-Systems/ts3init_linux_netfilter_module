@@ -32,8 +32,6 @@ enum
 {
     CHK_GET_PUZZLE_CHECK_COOKIE = 1 << 0,
     CHK_GET_PUZZLE_VALID_MASK   = (1 << 1) - 1,
-
-    SEED_LEN = 60
 };
 
 struct xt_ts3init_get_puzzle_mtinfo
@@ -42,7 +40,7 @@ struct xt_ts3init_get_puzzle_mtinfo
     __u8 specific_options;
     __u16 reserved1;
     __u32 min_client_version;
-    __u8 cookie_seed[SEED_LEN];
+    __u8 cookie_seed[COOKIE_SEED_LEN];
 };
 
 #endif /* _TS3INIT_MATCH_H */

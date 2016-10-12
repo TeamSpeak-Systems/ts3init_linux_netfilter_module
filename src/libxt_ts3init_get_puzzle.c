@@ -14,29 +14,11 @@
 #include <string.h>
 #include <getopt.h>
 #include <xtables.h>
+#include "ts3init_cookie_seed.h"
 #include "ts3init_match.h"
 
 #define param_act(t, s, f) xtables_param_act((t), "ts3init_get_puzzle", (s), (f))
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
-
-static bool hex2int_seed(const char *src, __u8* dst)
-{
-    for (int i = 0; i < 60; ++i)
-    {
-        int v = 0;
-        for (int j = 0; j < 2; ++j)
-        {
-            uint8_t byte = *src++; 
-                if (byte >= '0' && byte <= '9') byte = byte - '0';
-                else if (byte >= 'a' && byte <='f') byte = byte - 'a' + 10;
-                else if (byte >= 'A' && byte <='F') byte = byte - 'A' + 10;
-            else return false;
-                v = (v << 4) | byte;
-        }
-        *dst++ = v;
-    }
-    return true;
-}
 
 static void ts3init_get_puzzle_help(void)
 {
@@ -76,7 +58,7 @@ static int ts3init_get_puzzle_parse(int c, char **argv, int invert, unsigned int
     case '2':
         param_act(XTF_ONLY_ONCE, "--check-cookie", info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE);
         param_act(XTF_NO_INVERT, "--check-cookie", invert);
-        if (strlen(optarg) != 120)
+        if (strlen(optarg) != (COOKIE_SEED_LEN * 2))
             xtables_error(PARAMETER_PROBLEM,
                 "ts3init_get_puzzle: invalid cookie-seed length");
         if (!hex2int_seed(optarg, info->cookie_seed))
@@ -100,7 +82,7 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
         printf("--check-cookie ");
-        for (int i = 0; i < 60; i++)
+        for (int i = 0; i < COOKIE_SEED_LEN; i++)
         {
                 printf("%02X", info->cookie_seed[i]);
         }

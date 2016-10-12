@@ -21,7 +21,7 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
                 const __u8* cookie_seed);
 
 int ts3init_calculate_cookie(const struct sk_buff *skb,
-                struct xt_action_param *par, struct udphdr *udp,
-                u64 k0, u64 k1, __u64* out);
-                
+                const struct xt_action_param *par, struct udphdr *udp,
+                __u64 k0, __u64 k1, __u64* out);
+
 #endif /* _TS3INIT_COOKIE_H */

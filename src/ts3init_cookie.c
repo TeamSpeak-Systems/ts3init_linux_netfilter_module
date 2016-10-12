@@ -19,6 +19,7 @@
 #include <linux/netfilter/x_tables.h>
 #include <linux/udp.h>
 #include "siphash24.h"
+#include "ts3init_cookie_seed.h"
 #include "ts3init_cookie.h"
 
 static void check_update_seed_cache(time_t time, __u8 index, 
@@ -33,10 +34,10 @@ static void check_update_seed_cache(time_t time, __u8 index,
     if (time == cache->time[index]) return;
 
     /* We need to update the cache. */
-    /* seed = sha512(cookie_seed[60] + __le32 time) */
+    /* seed = sha512(cookie_seed[COOKIE_SEED_LEN] + __le32 time) */
     seed_hash_time = cpu_to_le32( (__u32)time);
     sg_init_table(sg, ARRAY_SIZE(sg));
-    sg_set_buf(&sg[0], cookie_seed, 60);
+    sg_set_buf(&sg[0], cookie_seed, COOKIE_SEED_LEN);
     sg_set_buf(&sg[1], &seed_hash_time, 4);
 
     desc.tfm = crypto_alloc_hash("sha512", 0, 0);
@@ -93,7 +94,8 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
     return cache->seed64 + ((SIP_KEY_SIZE/sizeof(__u64)) * packet_index );
 }
 
-int ts3init_calculate_cookie(const struct sk_buff *skb, struct xt_action_param *par, struct udphdr *udp, u64 k0, u64 k1, __u64* out)
+int ts3init_calculate_cookie(const struct sk_buff *skb, const struct xt_action_param *par, 
+                             struct udphdr *udp, __u64 k0, __u64 k1, __u64* out)
 {
     int addr_offset;
     int addr_len;

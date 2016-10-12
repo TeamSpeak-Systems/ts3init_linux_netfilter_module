@@ -14,9 +14,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <xtables.h>
+#include "ts3init_cookie_seed.h"
 #include "ts3init_target.h"
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
 static void ts3init_reset_help(void)
 {
