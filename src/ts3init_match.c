@@ -15,6 +15,8 @@
 #include <linux/kernel.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/skbuff.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/udp.h>
 #include <linux/time.h>
 #include <linux/percpu.h>

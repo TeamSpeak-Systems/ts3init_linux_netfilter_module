@@ -13,7 +13,6 @@
  */
 
 #include <linux/kernel.h>
-#include <linux/ip.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
 #include <linux/udp.h>
@@ -249,20 +248,43 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 static const char set_cookie_package_header[12] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_SET_COOKIE };
 
 static bool
-ts3init_fill_set_cookie_payload(const struct sk_buff *skb, const struct xt_action_param *par,
-                                struct sk_buff *newskb, struct udphdr *newudp, u8 *newpayload)
+ts3init_generate_cookie_ipv4(const struct xt_action_param *par,
+                             const struct iphdr *ip, const struct udphdr *udp,
+                             u64 *cookie_hash, u8 *packet_index)
+{
+    const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
+    __u64 cookie[2];
+
+    if (get_current_cookie(info->cookie_seed, &cookie, packet_index) == false)
+        return false;
+    if (ts3init_calculate_cookie_ipv4(ip, udp, cookie[0], cookie[1], cookie_hash))
+        return false;
+    return true;
+}
+
+static bool
+ts3init_generate_cookie_ipv6(const struct xt_action_param *par, 
+                             const struct ipv6hdr *ip, const struct udphdr *udp,
+                             u64 *cookie_hash, u8 *packet_index)
+{
+    const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
+    __u64 cookie[2];
+
+    if (get_current_cookie(info->cookie_seed, &cookie, packet_index) == false)
+        return false;
+    if (ts3init_calculate_cookie_ipv6(ip, udp, cookie[0], cookie[1], cookie_hash))
+        return false;
+    return true;
+}
+
+static bool
+ts3init_fill_set_cookie_payload(const struct sk_buff *skb,
+                                const struct xt_action_param *par, 
+                                const u64 cookie_hash, const u8 packet_index,
+                                u8 *newpayload)
 {
     const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
     u8 *payload, payload_buf[34];
-    __u64 cookie[2];
-    u64 cookie_hash;
-    u8 packet_index;
-
-    if (get_current_cookie(info->cookie_seed, &cookie, &packet_index) == false)
-        return false;
-
-    if (ts3init_calculate_cookie(newskb, par, newudp, cookie[0], cookie[1], &cookie_hash))
-        return false;
 
     memcpy(newpayload, set_cookie_package_header, sizeof(set_cookie_package_header));
     newpayload[12] = (u8)cookie_hash;
@@ -303,10 +325,14 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     struct iphdr *newip;
     struct udphdr *newudp;
     u8 *payload;
+    u64 cookie_hash;
+    u8 packet_index;
     const int payload_size = sizeof(set_cookie_package_header) + 20;
+    
     if (ts3init_prepare_ipv4_reply(skb, par, payload_size, &newskb, &newip, &newudp, &payload))
     {
-        if (ts3init_fill_set_cookie_payload(skb, par, newskb, newudp, payload))
+        if (ts3init_generate_cookie_ipv4(par, newip, newudp, &cookie_hash, &packet_index) &&
+            ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
         {
             ts3init_send_ipv4_reply(skb, par, newskb, newip, newudp);
         }
@@ -325,11 +351,14 @@ ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
     struct ipv6hdr *newip;
     struct udphdr *newudp;
     u8 *payload;
+    u64 cookie_hash;
+    u8 packet_index;
     const int payload_size = sizeof(set_cookie_package_header) + 20;
     
     if (ts3init_prepare_ipv6_reply(skb, par, payload_size, &newskb, &newip, &newudp, &payload))
     {
-        if (ts3init_fill_set_cookie_payload(skb, par, newskb, newudp, payload))
+        if (ts3init_generate_cookie_ipv6(par, newip, newudp, &cookie_hash, &packet_index) &&
+            ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
         {
             ts3init_send_ipv6_reply(skb, par, newskb, newip, newudp);
         }

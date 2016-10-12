@@ -17,6 +17,8 @@
 #include <linux/err.h>
 #include <linux/scatterlist.h>
 #include <linux/netfilter/x_tables.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 #include <linux/udp.h>
 #include "siphash24.h"
 #include "ts3init_cookie_seed.h"
@@ -92,6 +94,32 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
 
     /* return the proper seed */
     return cache->seed64 + ((SIP_KEY_SIZE/sizeof(__u64)) * packet_index );
+}
+
+int ts3init_calculate_cookie_ipv6(const struct ipv6hdr *ip, const struct udphdr *udp, 
+                                  __u64 k0, __u64 k1, __u64* out)
+{
+    struct ts3init_siphash_state hash_state;
+
+    ts3init_siphash_setup(&hash_state, k0, k1);
+    ts3init_siphash_update(&hash_state, (u8 *)&ip->saddr, sizeof(ip->saddr) * 2);
+    ts3init_siphash_update(&hash_state, (u8 *)&udp->source, 4);
+    *out = ts3init_siphash_finalize(&hash_state);
+
+    return 0;
+}
+
+int ts3init_calculate_cookie_ipv4(const struct iphdr *ip, const struct udphdr *udp, 
+                                  __u64 k0, __u64 k1, __u64* out)
+{
+    struct ts3init_siphash_state hash_state;
+
+    ts3init_siphash_setup(&hash_state, k0, k1);
+    ts3init_siphash_update(&hash_state, (u8 *)&ip->saddr, sizeof(ip->saddr) * 2);
+    ts3init_siphash_update(&hash_state, (u8 *)&udp->source, 4);
+    *out = ts3init_siphash_finalize(&hash_state);
+
+    return 0;
 }
 
 int ts3init_calculate_cookie(const struct sk_buff *skb, const struct xt_action_param *par, 
