@@ -46,7 +46,7 @@ static inline void update_cache_time(unsigned long jifs,
    }
 }
 
-time_t get_cached_unix_time(void)
+time_t ts3init_get_cached_unix_time(void)
 {
     struct ts3init_cache_t* cache;
     unsigned long jifs;
@@ -65,7 +65,7 @@ time_t get_cached_unix_time(void)
     return current_unix_time;
 }
 
-bool get_cookie_for_package_index(u8 packet_index, const u8* seed, u64 (*cookie)[2])
+bool ts3init_get_cookie_for_packet_index(u8 packet_index, const u8* seed, u64 (*cookie)[2])
 {
     struct ts3init_cache_t* cache;
     u64* result;
@@ -91,7 +91,7 @@ bool get_cookie_for_package_index(u8 packet_index, const u8* seed, u64 (*cookie)
     return result;
 }
 
-bool get_current_cookie(const u8* seed, u64 (*cookie)[2], u8 *packet_index)
+bool ts3init_get_current_cookie(const u8* seed, u64 (*cookie)[2], u8 *packet_index)
 {
     struct ts3init_cache_t* cache;
     u64* result;

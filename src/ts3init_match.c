@@ -97,7 +97,7 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
     {
         time_t current_unix_time, packet_unix_time;
 
-        current_unix_time = get_cached_unix_time();
+        current_unix_time = ts3init_get_cached_unix_time();
 
         packet_unix_time =
             header_data.ts3_header->payload[0] << 24 |
@@ -153,7 +153,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
         __u64 cookie_seed[2];
         __u64 cookie, packet_cookie;
 
-        if (get_cookie_for_package_index(ts3_header->payload[8], info->cookie_seed, &cookie_seed) == false)
+        if (ts3init_get_cookie_for_packet_index(ts3_header->payload[8], info->cookie_seed, &cookie_seed) == false)
             return false;
 
         /* use cookie_seed and ipaddress and port to create a hash
