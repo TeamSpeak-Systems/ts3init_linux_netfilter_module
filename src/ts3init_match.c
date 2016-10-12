@@ -201,7 +201,7 @@ static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
 static struct xt_match ts3init_mt_reg[] __read_mostly =
 {
     {
-        .name       = "TS3INIT_GET_COOKIE",
+        .name       = "ts3init_get_cookie",
         .revision   = 0,
         .family     = NFPROTO_IPV4,
         .proto      = IPPROTO_UDP,
@@ -211,7 +211,7 @@ static struct xt_match ts3init_mt_reg[] __read_mostly =
         .me         = THIS_MODULE,
     },
     {
-        .name       = "TS3INIT_GET_COOKIE",
+        .name       = "ts3init_get_cookie",
         .revision   = 0,
         .family     = NFPROTO_IPV6,
         .proto      = IPPROTO_UDP,
@@ -221,7 +221,7 @@ static struct xt_match ts3init_mt_reg[] __read_mostly =
         .me         = THIS_MODULE,
     },
     {
-        .name       = "TS3INIT_GET_PUZZLE",
+        .name       = "ts3init_get_puzzle",
         .revision   = 0,
         .family     = NFPROTO_IPV4,
         .proto      = IPPROTO_UDP,
@@ -231,7 +231,7 @@ static struct xt_match ts3init_mt_reg[] __read_mostly =
         .me         = THIS_MODULE,
     },
     {
-        .name       = "TS3INIT_GET_PUZZLE",
+        .name       = "ts3init_get_puzzle",
         .revision   = 0,
         .family     = NFPROTO_IPV6,
         .proto      = IPPROTO_UDP,
