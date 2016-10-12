@@ -11,8 +11,9 @@ enum
 enum
 {
     TARGET_SET_COOKIE_ZERO_RANDOM_SEQUENCE = 1 << 0,
-    TARGET_SET_COOKIE_SEED                 = 1 << 1,
-    TARGET_SET_COOKIE_VALID_MASK          = (1 << 2) - 1
+    TARGET_SET_COOKIE_SEED_FROM_ARGUMENT   = 1 << 1,
+    TARGET_SET_COOKIE_SEED_FROM_FILE       = 1 << 2,
+    TARGET_SET_COOKIE_VALID_MASK          = (1 << 3) - 1
 };
 
 
@@ -22,6 +23,7 @@ struct xt_ts3init_set_cookie_tginfo
     __u8 specific_options;
     __u16 reserved1;
     __u8 cookie_seed[COOKIE_SEED_LEN];
+    char cookie_seed_path[COOKIE_PATH_MAX];
 };
 
 #endif /* _TS3INIT_TARGET_H */

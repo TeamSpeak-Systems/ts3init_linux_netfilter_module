@@ -30,8 +30,10 @@ struct xt_ts3init_get_cookie_mtinfo
 /* Enums and structs for get_puzzle */
 enum
 {
-    CHK_GET_PUZZLE_CHECK_COOKIE = 1 << 0,
-    CHK_GET_PUZZLE_VALID_MASK   = (1 << 1) - 1,
+    CHK_GET_PUZZLE_CHECK_COOKIE       = 1 << 0,
+	CHK_GET_PUZZLE_SEED_FROM_ARGUMENT = 1 << 1,
+	CHK_GET_PUZZLE_SEED_FROM_FILE     = 1 << 2,
+    CHK_GET_PUZZLE_VALID_MASK        = (1 << 3) - 1,
 };
 
 struct xt_ts3init_get_puzzle_mtinfo
@@ -41,6 +43,7 @@ struct xt_ts3init_get_puzzle_mtinfo
     __u16 reserved1;
     __u32 min_client_version;
     __u8 cookie_seed[COOKIE_SEED_LEN];
+    char cookie_seed_path[COOKIE_PATH_MAX];
 };
 
 #endif /* _TS3INIT_MATCH_H */

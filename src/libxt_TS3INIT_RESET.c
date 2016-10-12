@@ -14,6 +14,9 @@
 #include <string.h>
 #include <getopt.h>
 #include <xtables.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 #include "ts3init_cookie_seed.h"
 #include "ts3init_target.h"
 

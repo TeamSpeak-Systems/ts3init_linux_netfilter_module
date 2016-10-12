@@ -14,6 +14,9 @@
 #include <string.h>
 #include <getopt.h>
 #include <xtables.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
 #include "ts3init_cookie_seed.h"
 #include "ts3init_target.h"
 
@@ -22,15 +25,17 @@
 static void ts3init_set_cookie_tg_help(void)
 {
     printf(
-        "TS3INIT_SET_COOKIE match options:\n"
-        "  --zero-random-sequence        Always return 0 as random sequence.\n"
-        "  --cookie-seed seed            Seed is a 60 byte random number in\n"
-        "                                hex. A source could be /dev/random.\n");
+        "TS3INIT_SET_COOKIE target options:\n"
+        "  --zero-random-sequence       Always return 0 as random sequence.\n"
+        "  --seed <seed>                Seed is a 60 byte lowercase hex number in.\n"
+        "                               A source could be /dev/random.\n"
+        "  --seed-file <file>           Read the seed from a file.\n");
 }
 
 static const struct option ts3init_set_cookie_tg_opts[] = {
     {.name = "zero-random-sequence", .has_arg = false, .val = '1'},
-    {.name = "cookie-seed",          .has_arg = true,  .val = '2'},
+    {.name = "seed",                 .has_arg = true,  .val = '2'},
+    {.name = "seed-file",            .has_arg = true,  .val = '3'},
     {NULL},
 };
 
@@ -42,20 +47,30 @@ static int ts3init_set_cookie_tg_parse(int c, char **argv,
     switch (c) {
     case '1':
         param_act(XTF_ONLY_ONCE, "--zero-random-sequence", info->specific_options & TARGET_SET_COOKIE_ZERO_RANDOM_SEQUENCE);
-        param_act(XTF_NO_INVERT, "--check-time", invert);
+        param_act(XTF_NO_INVERT, "--zero-random-sequence", invert);
         info->specific_options |= TARGET_SET_COOKIE_ZERO_RANDOM_SEQUENCE;
         return true;
     case '2':
-        param_act(XTF_ONLY_ONCE, "--cookie-seed", info->specific_options & TARGET_SET_COOKIE_SEED);
-        param_act(XTF_NO_INVERT, "--cookie-seed", invert);
+        param_act(XTF_ONLY_ONCE, "--seed", *flags & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT);
+        param_act(XTF_NO_INVERT, "--seed", invert);
         if (strlen(optarg) != (COOKIE_SEED_LEN * 2))
             xtables_error(PARAMETER_PROBLEM,
-                "TS3INIT_SET_COOKIE: invalid cookie-seed length");
+                "TS3INIT_SET_COOKIE: invalid seed length");
         if (!hex2int_seed(optarg, info->cookie_seed))
             xtables_error(PARAMETER_PROBLEM,
-                "TS3INIT_SET_COOKIE: invalid cookie-seed. (not lowercase hex)");
-        info->specific_options |= TARGET_SET_COOKIE_SEED;
-        *flags |= TARGET_SET_COOKIE_SEED;
+                "TS3INIT_SET_COOKIE: invalid seed. (not lowercase hex)");
+        info->specific_options |= TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
+        *flags |= TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
+        return true;
+
+    case '3':
+        param_act(XTF_ONLY_ONCE, "--seed-file", *flags & TARGET_SET_COOKIE_SEED_FROM_FILE);
+        param_act(XTF_NO_INVERT, "--seed-file", invert);
+
+        if (read_cookie_seed_from_file("TS3INIT_SET_COOKIE", optarg, info->cookie_seed))
+            memcpy(info->cookie_seed_path, optarg, strlen(optarg) + 1);
+        info->specific_options |= TARGET_SET_COOKIE_SEED_FROM_FILE;
+        *flags |= TARGET_SET_COOKIE_SEED_FROM_FILE;
         return true;
 
     default:
@@ -70,14 +85,18 @@ static void ts3init_set_cookie_tg_save(const void *ip, const struct xt_entry_tar
     {
         printf("--zero-random-sequence ");
     }
-    if (info->specific_options & TARGET_SET_COOKIE_SEED)
+    if (info->specific_options & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT)
     {
-        printf("--cookie-seed ");
+        printf("--seed ");
         for (int i = 0; i < COOKIE_SEED_LEN; i++)
         {
             printf("%02X", info->cookie_seed[i]);
         }
         printf(" ");
+    }
+    if (info->specific_options & TARGET_SET_COOKIE_SEED_FROM_FILE)
+    {
+        printf("--seed-file \"%s\" ", info->cookie_seed_path);
     }
 }
 
@@ -90,10 +109,19 @@ static void ts3init_set_cookie_tg_print(const void *ip, const struct xt_entry_ta
 
 static void ts3init_set_cookie_tg_check(unsigned int flags)
 {
-    if ((flags & TARGET_SET_COOKIE_SEED) == 0)
+    bool seed_from_argument = flags & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
+    bool seed_from_file = flags & TARGET_SET_COOKIE_SEED_FROM_FILE;
+    if (seed_from_argument && seed_from_file)
     {
-            xtables_error(PARAMETER_PROBLEM, 
-                "TS3INIT_SET_COOKIE: --cookie-seed must be specified");
+        xtables_error(PARAMETER_PROBLEM,
+            "TS3INIT_SET_COOKIE: --seed and --seed-file "
+            "can not be specified at the same time");           
+    }
+    if (!seed_from_argument && !seed_from_file)
+    {
+        xtables_error(PARAMETER_PROBLEM,
+            "TS3INIT_SET_COOKIE: either --seed or --seed-file "
+            "must be specified");
     }
 }
 
