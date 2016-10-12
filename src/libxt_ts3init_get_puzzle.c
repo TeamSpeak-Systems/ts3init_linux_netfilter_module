@@ -26,9 +26,9 @@ static void ts3init_get_puzzle_help(void)
         "ts3init_get_puzzle match options:\n"
         "  --min-client n The sending client needs to be at least version n.\n"
         "  --check-cookie seed Check the cookie. Assume it was generated with seed.\n"
-        "                      seed is a 60 byte random number in lowecase hex. A source\n"
+        "                      seed is a 60 byte random number in hex. A source\n"
         "                      could be /dev/random.\n"
-);
+    );
 }
 
 static const struct option ts3init_get_puzzle_opts[] = {
