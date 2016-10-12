@@ -35,7 +35,7 @@ static void ts3init_reset_check(unsigned int flags)
 /* register and init */
 static struct xtables_target ts3init_reset_tg_reg =
 {
-	.name          = "TS33INIT_RESET",
+	.name          = "TS3INIT_RESET",
 	.revision      = 0,
 	.family        = NFPROTO_UNSPEC,
 	.version       = XTABLES_VERSION,
