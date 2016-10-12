@@ -22,9 +22,9 @@
 static void ts3init_set_cookie_tg_help(void)
 {
     printf(
-        "ts3init_get_cookie match options:\n"
+        "TS3INIT_SET_COOKIE match options:\n"
         "  --zero-random-sequence        Always return 0 as random sequence.\n"
-        "  --cookie-seed seed            Seed is a 60 byte random number in lowecase\n"
+        "  --cookie-seed seed            Seed is a 60 byte random number in\n"
         "                                hex. A source could be /dev/random.\n");
 }
 

@@ -19,7 +19,7 @@
 
 static void ts3init_reset_help(void)
 {
-    printf("ts3init_reset takes no options\n\n");
+    printf("TS3INIT_RESET takes no options\n\n");
 }
 
 static int ts3init_reset_parse(int c, char **argv, int invert, unsigned int *flags,
@@ -35,7 +35,7 @@ static void ts3init_reset_check(unsigned int flags)
 /* register and init */
 static struct xtables_target ts3init_reset_tg_reg =
 {
-	.name          = "ts3init_reset",
+	.name          = "TS33INIT_RESET",
 	.revision      = 0,
 	.family        = NFPROTO_UNSPEC,
 	.version       = XTABLES_VERSION,
