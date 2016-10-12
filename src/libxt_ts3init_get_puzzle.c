@@ -70,7 +70,7 @@ static int ts3init_get_puzzle_parse(int c, char **argv, int invert, unsigned int
             xtables_error(PARAMETER_PROBLEM,
                 "ts3init_get_cookie: invalid min-client version");
         info->common_options |= CHK_COMMON_CLIENT_VERSION;
-        info->min_client_version = client_version;
+        info->min_client_version = client_version - CLIENT_VERSION_OFFSET;
         return true;
 
     case '2':
@@ -95,7 +95,7 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
     const struct xt_ts3init_get_puzzle_mtinfo *info = (const void *)match->data;
     if (info->common_options & CHK_COMMON_CLIENT_VERSION)
     {
-        printf("--min-client %u ", info->min_client_version);
+        printf("--min-client %u ", info->min_client_version + CLIENT_VERSION_OFFSET);
     }
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {

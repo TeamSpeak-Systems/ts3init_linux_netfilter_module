@@ -5,7 +5,9 @@
 enum
 {
     CHK_COMMON_CLIENT_VERSION = 1 << 0,
-    CHK_COMMON_VALID_MASK     = (1 << 1) -1
+    CHK_COMMON_VALID_MASK     = (1 << 1) -1,
+
+    CLIENT_VERSION_OFFSET     = 1356998400
 };
 
 /* Enums and structs for get_cookie */
