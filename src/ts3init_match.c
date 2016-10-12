@@ -82,6 +82,46 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     return true;
 }
 
+static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_param *par, 
+                       struct udphdr *udp, __u64 k0, __u64 k1, __u64* out)
+{
+    switch (par->family)
+    {
+    case NFPROTO_IPV4:
+        {
+            const struct iphdr *ip;
+            struct iphdr ip_buf;
+
+            ip  = skb_header_pointer(skb, skb->network_header, sizeof(ip_buf), &ip_buf);
+            if (ip == NULL)
+            {
+                printk(KERN_ERR KBUILD_MODNAME ": could not load ipv4 addresses\n");
+                return -EINVAL;
+            }
+
+            return ts3init_calculate_cookie_ipv4(ip, udp, k0, k1, out);
+        }
+
+    case NFPROTO_IPV6:
+        {
+            const struct ipv6hdr *ip;
+            struct ipv6hdr ip_buf;
+
+            ip  = skb_header_pointer(skb, skb->network_header, sizeof(ip_buf), &ip_buf);
+            if (ip == NULL)
+            {
+                printk(KERN_ERR KBUILD_MODNAME ": could not load ipv6 addresses\n");
+                return -EINVAL;
+            }
+
+            return ts3init_calculate_cookie_ipv6(ip, udp, k0, k1, out);
+        }
+    default:
+        printk(KERN_ERR KBUILD_MODNAME ": invalid family\n");
+        return -EINVAL;
+    }
+}
+
 static bool
 ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
@@ -136,8 +176,7 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
     return 0;
 }
 
-static bool
-ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
+static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
     struct ts3_init_checked_header_data header_data;
@@ -158,7 +197,7 @@ ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
         /* use cookie_seed and ipaddress and port to create a hash
          * (cookie) for this connection */
-        if (ts3init_calculate_cookie(skb, par, header_data.udp, cookie_seed[0], cookie_seed[1], &cookie))
+        if (calculate_cookie(skb, par, header_data.udp, cookie_seed[0], cookie_seed[1], &cookie))
             return false; /*something went wrong*/
 
         /* compare cookie with payload bytes 0-7. if equal, cookie
