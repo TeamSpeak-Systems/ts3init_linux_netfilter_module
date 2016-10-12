@@ -28,7 +28,7 @@ $ iptables -m ts3init_get_puzzle -h
 ts3init_get_puzzle match options:
   --min-client n The sending client needs to be at least version n.
   --check-cookie seed Check the cookie. Assume it was generated with seed.
-                      seed is a 60 byte random number in lower case hex. A source
+                      seed is a 60 byte random number in hex. A source
                       could be /dev/random.
 ```
 The min-client parameter is the same as above. The check-cookie parameter matches if it matches the cookie that was generated in the netfilter target extension ts3init_set_cookie. To match the seed needs to be exactly the same of course. It is possible to check cookies that were generated on a different machine, provided that those machines have the same date and time, and the seem seed specified. In other words: The cookie is created in a deterministic way, depending only on the current time and the seed.
