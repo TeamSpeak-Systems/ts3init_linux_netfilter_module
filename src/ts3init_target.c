@@ -33,23 +33,16 @@
 
 
 static bool
-ts3init_prepare_ipv6_reply(const struct sk_buff *oldskb, const struct xt_action_param *par,
-                           const size_t payload_size, struct sk_buff **newskb, struct ipv6hdr **newip,
-                           struct udphdr **newudp, u8 **payload)
+ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
+                        const struct ipv6hdr *oldip, const struct udphdr *oldudp,
+                        const void* payload, const size_t payload_size)
 {
-    const struct udphdr *oldudp;
-    const struct ipv6hdr *oldip;
-    struct udphdr *udp, oldudp_buf;
-    struct ipv6hdr *ip;
     struct sk_buff *skb;
-    
-    oldip  = ipv6_hdr(oldskb);
-    oldudp = skb_header_pointer(oldskb, par->thoff,
-             sizeof(*oldudp), &oldudp_buf);
-    if (oldudp == NULL)
-        return false;
-    if (ntohs(oldudp->len) <= sizeof(*oldudp))
-        return false;
+    struct ipv6hdr *ip;
+    struct udphdr *udp;
+    struct flowi6 fl;
+    struct dst_entry *dst = NULL;
+    struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
 
     skb = alloc_skb(LL_MAX_HEADER + sizeof(*ip) +
              sizeof(*udp) + payload_size, GFP_ATOMIC);
@@ -74,22 +67,8 @@ ts3init_prepare_ipv6_reply(const struct sk_buff *oldskb, const struct xt_action_
     udp->dest   = oldudp->source;
     udp->len    = htons(sizeof(*udp) + payload_size);
 
-    *payload = skb_put(skb, payload_size);
+    memcpy(skb_put(skb, payload_size), payload, payload_size);
     ip->payload_len = htons(skb->len);
-    
-    *newskb = skb;
-    *newip = ip;
-    *newudp = udp;
-    return true;
-}
-
-static bool
-ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
-                        struct sk_buff *skb, struct ipv6hdr *ip, struct udphdr *udp)
-{
-    struct flowi6 fl;
-    struct dst_entry *dst = NULL;
-    struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
 
     udp->check = 0;
     udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
@@ -127,26 +106,16 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
 }
 
 static bool
-ts3init_prepare_ipv4_reply(const struct sk_buff *oldskb, const struct xt_action_param *par, 
-                           const size_t payload_size, struct sk_buff **newskb, struct iphdr **newip, 
-                           struct udphdr **newudp, u8 **payload)
+ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
+                        const struct iphdr *oldip, const struct udphdr *oldudp,
+                        const void* payload, const size_t payload_size)
 {
-    const struct udphdr *oldudp;
-    const struct iphdr *oldip;
-    struct udphdr *udp, oldudp_buf;
-    struct iphdr *ip;
     struct sk_buff *skb;
-
-    oldip  = ip_hdr(oldskb);
-    oldudp = skb_header_pointer(oldskb, par->thoff,
-             sizeof(*oldudp), &oldudp_buf);
-    if (oldudp == NULL)
-        return false;
-    if (ntohs(oldudp->len) <= sizeof(*oldudp))
-        return false;
+    struct iphdr *ip;
+    struct udphdr *udp;
 
     skb = alloc_skb(LL_MAX_HEADER + sizeof(*ip) +
-             sizeof(*udp) + payload_size, GFP_ATOMIC);
+         sizeof(*udp) + payload_size, GFP_ATOMIC);
     if (skb == NULL)
         return false;
 
@@ -171,19 +140,9 @@ ts3init_prepare_ipv4_reply(const struct sk_buff *oldskb, const struct xt_action_
     udp->dest   = oldudp->source;
     udp->len    = htons(sizeof(*udp) + payload_size);
 
-    *payload = skb_put(skb, payload_size);
+    memcpy(skb_put(skb, payload_size), payload, payload_size);
     ip->tot_len = htons(skb->len);
 
-    *newskb = skb;
-    *newip = ip;
-    *newudp = udp;
-    return true;
-}
-
-static bool
-ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
-                        struct sk_buff *skb, struct iphdr *ip, struct udphdr *udp)
-{
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
                     ntohs(udp->len), IPPROTO_UDP,
@@ -216,32 +175,28 @@ static const char ts3init_reset_package[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', 
 static unsigned int
 ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
-    struct sk_buff *newskb;
-    struct iphdr *newip;
-    struct udphdr *newudp;
-    u8 *payload;
+    struct iphdr *ip;
+    struct udphdr *udp, udp_buf;
+    ip  = ip_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &udp_buf);
+    if (udp == NULL || ntohs(udp->len) <= sizeof(*udp))
+        return NF_DROP;
 
-    if (ts3init_prepare_ipv4_reply(skb, par, sizeof(ts3init_reset_package), &newskb, &newip, &newudp, &payload))
-    {
-        memcpy(payload, ts3init_reset_package, sizeof(ts3init_reset_package));
-        ts3init_send_ipv4_reply(skb, par, newskb, newip, newudp);
-    }
+    ts3init_send_ipv4_reply(skb, par, ip, udp, ts3init_reset_package, sizeof(ts3init_reset_package));
     return NF_DROP;
 }
 
 static unsigned int
 ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
-    struct sk_buff *newskb;
-    struct ipv6hdr *newip;
-    struct udphdr *newudp;
-    u8 *payload;
+    struct ipv6hdr *ip;
+    struct udphdr *udp, udp_buf;
+    ip  = ipv6_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &udp_buf);
+    if (udp == NULL || ntohs(udp->len) <= sizeof(*udp))
+        return NF_DROP;
 
-    if (ts3init_prepare_ipv6_reply(skb, par, sizeof(ts3init_reset_package), &newskb, &newip, &newudp, &payload))
-    {
-        memcpy(payload, ts3init_reset_package, sizeof(ts3init_reset_package));
-        ts3init_send_ipv6_reply(skb, par, newskb, newip, newudp);
-    }
+    ts3init_send_ipv6_reply(skb, par, ip, udp, ts3init_reset_package, sizeof(ts3init_reset_package));
     return NF_DROP;
 }
 
@@ -321,25 +276,31 @@ ts3init_fill_set_cookie_payload(const struct sk_buff *skb,
 static unsigned int
 ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
-    struct sk_buff *newskb;
-    struct iphdr *newip;
-    struct udphdr *newudp;
-    u8 *payload;
+    struct iphdr *ip;
+    struct udphdr *udp, udp_buf;
     u64 cookie_hash;
     u8 packet_index;
-    const int payload_size = sizeof(ts3init_set_cookie_package_header) + 20;
-    
-    if (ts3init_prepare_ipv4_reply(skb, par, payload_size, &newskb, &newip, &newudp, &payload))
+    u8 payload[sizeof(ts3init_set_cookie_package_header) + 20];
+
+    ip  = ip_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &udp_buf);
+    if (udp == NULL || ntohs(udp->len) <= sizeof(*udp))
     {
-        if (ts3init_generate_cookie_ipv4(par, newip, newudp, &cookie_hash, &packet_index) &&
-            ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
+        return NF_DROP;
+        printk(KERN_ERR KBUILD_MODNAME ": failed to get udp header!\n");
+    }
+
+    if (ts3init_generate_cookie_ipv4(par, ip, udp, &cookie_hash, &packet_index) &&
+        ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
+    {
+        if (ts3init_send_ipv4_reply(skb, par, ip, udp, payload, sizeof(payload)) == false)
         {
-            ts3init_send_ipv4_reply(skb, par, newskb, newip, newudp);
+            printk(KERN_ERR KBUILD_MODNAME ": failed to send reply!\n");
         }
-        else
-        {
-            kfree_skb(newskb);
-        }
+    }
+    else
+    {
+        printk(KERN_ERR KBUILD_MODNAME ": failed to generate reply!\n");
     }
     return NF_DROP;
 }
@@ -347,25 +308,21 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
 static unsigned int
 ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
-    struct sk_buff *newskb;
-    struct ipv6hdr *newip;
-    struct udphdr *newudp;
-    u8 *payload;
+    struct ipv6hdr *ip;
+    struct udphdr *udp, udp_buf;
     u64 cookie_hash;
     u8 packet_index;
-    const int payload_size = sizeof(ts3init_set_cookie_package_header) + 20;
-    
-    if (ts3init_prepare_ipv6_reply(skb, par, payload_size, &newskb, &newip, &newudp, &payload))
+    u8 payload[sizeof(ts3init_set_cookie_package_header) + 20];
+
+    ip  = ipv6_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &udp_buf);
+    if (udp == NULL || ntohs(udp->len) <= sizeof(*udp))
+        return NF_DROP;
+
+    if (ts3init_generate_cookie_ipv6(par, ip, udp, &cookie_hash, &packet_index) &&
+        ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
     {
-        if (ts3init_generate_cookie_ipv6(par, newip, newudp, &cookie_hash, &packet_index) &&
-            ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
-        {
-            ts3init_send_ipv6_reply(skb, par, newskb, newip, newudp);
-        }
-        else
-        {
-            kfree_skb(newskb);
-        }
+        ts3init_send_ipv6_reply(skb, par, ip, udp, payload, sizeof(payload));
     }
     return NF_DROP;
 }
