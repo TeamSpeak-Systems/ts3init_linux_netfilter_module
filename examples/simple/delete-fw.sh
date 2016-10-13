@@ -1,19 +1,30 @@
 #!/bin/bash
 
-#clear up iptables
-sudo iptables -t raw -D PREROUTING -p udp --dport 9987 -j CT --notrack
-sudo iptables -D INPUT -p udp --dport 9987 -j TS3_UDP_TRAFFIC
-sudo iptables -D INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
+if [ "$1" == "4" ]
+then
+  IPTABLES=iptables
+elif [ "$1" == "6" ]
+then
+  IPTABLES=ip6tables
+else
+  echo "specify either 4 or 6 as a parameter for ipv4 or ipv6";
+  exit -1
+fi
 
-sudo iptables -F TS3_UDP_TRAFFIC
-sudo iptables -F TS3_TCP_TRAFFIC
-sudo iptables -F TS3_ACCEPT_NEW
-sudo iptables -F TS3_UPDATE_AUTHORIZED
+#clear up ${IPTABLES}
+sudo ${IPTABLES} -t raw -D PREROUTING -p udp --dport 9987 -j CT --notrack
+sudo ${IPTABLES} -D INPUT -p udp --dport 9987 -j TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -D INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
 
-sudo iptables -X TS3_UDP_TRAFFIC
-sudo iptables -X TS3_TCP_TRAFFIC
-sudo iptables -X TS3_ACCEPT_NEW
-sudo iptables -X TS3_UPDATE_AUTHORIZED
+sudo ${IPTABLES} -F TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -F TS3_TCP_TRAFFIC
+sudo ${IPTABLES} -F TS3_ACCEPT_NEW
+sudo ${IPTABLES} -F TS3_UPDATE_AUTHORIZED
+
+sudo ${IPTABLES} -X TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -X TS3_TCP_TRAFFIC
+sudo ${IPTABLES} -X TS3_ACCEPT_NEW
+sudo ${IPTABLES} -X TS3_UPDATE_AUTHORIZED
 
 #delete the ipset
-sudo ipset destroy ts3_authorized
+sudo ipset destroy ts3_authorized${1}
