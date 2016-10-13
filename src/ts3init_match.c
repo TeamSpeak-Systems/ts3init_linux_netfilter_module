@@ -90,9 +90,8 @@ static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_pa
     case NFPROTO_IPV4:
         {
             const struct iphdr *ip;
-            struct iphdr ip_buf;
 
-            ip  = skb_header_pointer(skb, skb->network_header, sizeof(ip_buf), &ip_buf);
+            ip  = ip_hdr(skb);
             if (ip == NULL)
             {
                 printk(KERN_ERR KBUILD_MODNAME ": could not load ipv4 addresses\n");
@@ -105,9 +104,8 @@ static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_pa
     case NFPROTO_IPV6:
         {
             const struct ipv6hdr *ip;
-            struct ipv6hdr ip_buf;
 
-            ip  = skb_header_pointer(skb, skb->network_header, sizeof(ip_buf), &ip_buf);
+            ip  = ipv6_hdr(skb);
             if (ip == NULL)
             {
                 printk(KERN_ERR KBUILD_MODNAME ": could not load ipv6 addresses\n");
