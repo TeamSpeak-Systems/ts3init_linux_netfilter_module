@@ -26,6 +26,7 @@
 #include "ts3init_header.h"
 #include "ts3init_cache.h"
 
+/* Magic number of a TS3INIT packet. */
 static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
@@ -39,6 +40,10 @@ struct ts3_init_checked_header_data
 static const int header_size = 18;
 static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 
+/* 
+ * Check that skb contains a valid TS3INIT client header.
+ * Also initializes header_data, and checks client version.
+ */
 static bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
     struct ts3_init_checked_header_data* header_data, __u32 min_client_version)
 {
@@ -89,6 +94,9 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     return true;
 }
 
+/*
+ * Hashes the cookie with source/destination address/port.
+ */
 static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_param *par, 
                        struct udphdr *udp, __u64 k0, __u64 k1, __u64* out)
 {
@@ -127,6 +135,10 @@ static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_pa
     }
 }
 
+/*
+ * The 'ts3init_get_cookie' match handler.
+ * Checks that the packet is a valid COMMAND_GET_COOKIE.
+ */
 static bool
 ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
@@ -156,6 +168,9 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
     return true;
 }
 
+/*
+ * Validates matchinfo recieved from userspace.
+ */
 static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
 {
     struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
@@ -181,6 +196,11 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
     return 0;
 }
 
+/*
+ * The 'ts3init_get_cookie' match handler.
+ * Checks that the packet is a valid COMMAND_GET_PUZZLE, and if the replied
+ * with the correct cookie.
+ */
 static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
@@ -218,6 +238,9 @@ static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_pa
     return true;
 }
 
+/*
+ * Validates matchinfo recieved from userspace.
+ */
 static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
 {
     struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;

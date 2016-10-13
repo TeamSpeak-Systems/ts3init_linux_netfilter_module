@@ -1,6 +1,9 @@
 #ifndef _TS3INIT_HEADER_H
 #define _TS3INIT_HEADER_H
 
+/*
+ * Magic number of a TS3INIT packet.
+ */
 struct ts3_init_header_tag
 {
     union
@@ -10,6 +13,9 @@ struct ts3_init_header_tag
     };
 };
 
+/* 
+ * Header of a TS3INIT client packet.
+ */
 struct ts3_init_header
 {
     struct ts3_init_header_tag tag;
@@ -21,6 +27,9 @@ struct ts3_init_header
     __u8   payload[20];
 };
 
+/*
+ * The available TS3INIT commands, both client and server.
+ */
 enum
 {
     COMMAND_GET_COOKIE = 0,

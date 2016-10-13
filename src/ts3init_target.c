@@ -32,6 +32,9 @@
 #include "ts3init_cache.h"
 
 
+/*
+ * Send a reply back to the client
+ */
 static bool
 ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
                         const struct ipv6hdr *oldip, const struct udphdr *oldudp,
@@ -105,6 +108,9 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     return false;
 }
 
+/*
+ * Send a reply back to the client
+ */
 static bool
 ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
                         const struct iphdr *oldip, const struct udphdr *oldudp,
@@ -170,8 +176,13 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     return false;
 }
 
+/* The payload replied by TS3INIT_RESET. */
 static const char ts3init_reset_packet[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET, 0 };
 
+/* 
+ * The 'TS3INIT_RESET' target handler.
+ * Always replies with COMMAND_RESET and drops the packet
+ */
 static unsigned int
 ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
@@ -186,6 +197,10 @@ ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
     return NF_DROP;
 }
 
+/* 
+ * The 'TS3INIT_RESET' target handler.
+ * Always replies with COMMAND_RESET and drops the packet.
+ */
 static unsigned int
 ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
@@ -200,8 +215,13 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
     return NF_DROP;
 }
 
+/* The header replied by TS3INIT_SET_COOKIE. */
 static const char ts3init_set_cookie_packet_header[12] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_SET_COOKIE };
 
+/* 
+ * Returns the current cookie hashed with source/destination address/port,
+ * and the current packet_index.
+ */
 static bool
 ts3init_generate_cookie_ipv4(const struct xt_action_param *par,
                              const struct iphdr *ip, const struct udphdr *udp,
@@ -217,6 +237,10 @@ ts3init_generate_cookie_ipv4(const struct xt_action_param *par,
     return true;
 }
 
+/* 
+ * Returns the current cookie hashed with source/destination address/port,
+ * and the current packet_index.
+ */
 static bool
 ts3init_generate_cookie_ipv6(const struct xt_action_param *par, 
                              const struct ipv6hdr *ip, const struct udphdr *udp,
@@ -232,6 +256,9 @@ ts3init_generate_cookie_ipv6(const struct xt_action_param *par,
     return true;
 }
 
+/*
+ * Fills 'newpayload' with a TS3INIT_SET_COOKIE packet.
+ */
 static bool
 ts3init_fill_set_cookie_payload(const struct sk_buff *skb,
                                 const struct xt_action_param *par, 
@@ -273,6 +300,10 @@ ts3init_fill_set_cookie_payload(const struct sk_buff *skb,
     return true;
 }
 
+/* 
+ * The 'TS3INIT_SET_COOKIE' target handler.
+ * Always replies with TS3INIT_SET_COOKIE and drops the packet.
+ */
 static unsigned int
 ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
@@ -295,6 +326,10 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     return NF_DROP;
 }
 
+/* 
+ * The 'TS3INIT_SET_COOKIE' target handler.
+ * Always replies with TS3INIT_SET_COOKIE and drops the packet.
+ */
 static unsigned int
 ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
@@ -317,6 +352,9 @@ ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
     return NF_DROP;
 }
 
+/*
+ * Validates targinfo recieved from userspace.
+ */
 static int ts3init_set_cookie_tg_check(const struct xt_tgchk_param *par)
 {
     struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;

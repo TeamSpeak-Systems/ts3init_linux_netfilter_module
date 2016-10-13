@@ -6,6 +6,10 @@ enum {
 	COOKIE_PATH_MAX = 256,
 };
 
+/* 
+ * Parses a hexstring into dest.
+ * It is assumed that COOKIE_SEED_LEN bytes are to be parsed.
+ */
 static inline bool hex2int_seed(const char *src, __u8* dst)
 {
     int i, j;
@@ -28,6 +32,9 @@ static inline bool hex2int_seed(const char *src, __u8* dst)
 
 #ifndef __KERNEL__
 
+/* 
+ * Reads a cookie seed from a file.
+ */
 static inline bool read_cookie_seed_from_file(const char *module_name, const char *path, __u8* dst)
 {
 	int n, fd;
