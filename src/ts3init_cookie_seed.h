@@ -9,7 +9,7 @@ enum {
 static inline bool hex2int_seed(const char *src, __u8* dst)
 {
     int i, j;
-    for (i = 0; i < 60; ++i)
+    for (i = 0; i < COOKIE_SEED_LEN; ++i)
     {
         int v = 0;
         for ( j = 0; j < 2; ++j)

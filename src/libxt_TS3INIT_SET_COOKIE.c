@@ -27,9 +27,10 @@ static void ts3init_set_cookie_tg_help(void)
     printf(
         "TS3INIT_SET_COOKIE target options:\n"
         "  --zero-random-sequence       Always return 0 as random sequence.\n"
-        "  --seed <seed>                Seed is a 60 byte lowercase hex number in.\n"
+        "  --seed <seed>                Seed is a %i byte lowercase hex number in.\n"
         "                               A source could be /dev/random.\n"
-        "  --seed-file <file>           Read the seed from a file.\n");
+        "  --seed-file <file>           Read the seed from a file.\n",
+        COOKIE_SEED_LEN);
 }
 
 static const struct option ts3init_set_cookie_tg_opts[] = {
