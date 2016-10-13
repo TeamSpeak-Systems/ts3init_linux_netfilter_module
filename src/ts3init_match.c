@@ -37,7 +37,6 @@ struct ts3_init_checked_header_data
     struct ts3_init_header* ts3_header, ts3_header_buf;
 };
 
-static const int header_size = 18;
 static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 
 /* 
@@ -55,7 +54,7 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len < header_size ||
+    if (data_len < TS3INIT_HEADER_CLIENT_LENGTH ||
         data_len > sizeof(header_data->ts3_header_buf))
         return false;
 
@@ -87,7 +86,8 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
 
 	/* payload size check*/
     expected_payload_size = ts3init_payload_sizes[ts3_header->command];
-    if (data_len != header_size + expected_payload_size) return false;
+    if (data_len != TS3INIT_HEADER_CLIENT_LENGTH + expected_payload_size)
+		return false;
 
     header_data->udp = udp;    
     header_data->ts3_header = ts3_header;

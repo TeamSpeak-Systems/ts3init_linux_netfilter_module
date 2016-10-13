@@ -1,6 +1,12 @@
 #ifndef _TS3INIT_HEADER_H
 #define _TS3INIT_HEADER_H
 
+enum
+{
+	TS3INIT_HEADER_CLIENT_LENGTH = 18,
+	TS3INIT_HEADER_SERVER_LENGTH = 12,
+};
+
 /*
  * Magic number of a TS3INIT packet.
  */
