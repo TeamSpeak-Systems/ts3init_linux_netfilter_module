@@ -170,7 +170,7 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     return false;
 }
 
-static const char ts3init_reset_package[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET_PUZZLE, 0 };
+static const char ts3init_reset_package[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET, 0 };
 
 static unsigned int
 ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
