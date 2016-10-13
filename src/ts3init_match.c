@@ -29,6 +29,13 @@
 static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
+
+struct ts3_init_checked_header_data
+{
+    struct udphdr *udp, udp_buf;
+    struct ts3_init_header* ts3_header, ts3_header_buf;
+};
+
 static const int header_size = 18;
 static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 

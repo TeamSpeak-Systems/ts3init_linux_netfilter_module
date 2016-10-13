@@ -21,12 +21,6 @@ struct ts3_init_header
     __u8   payload[20];
 };
 
-struct ts3_init_checked_header_data
-{
-    struct udphdr *udp, udp_buf;
-    struct ts3_init_header* ts3_header, ts3_header_buf;
-};
-
 enum
 {
     COMMAND_GET_COOKIE = 0,
