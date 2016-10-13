@@ -285,22 +285,12 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     ip  = ip_hdr(skb);
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &udp_buf);
     if (udp == NULL || ntohs(udp->len) <= sizeof(*udp))
-    {
         return NF_DROP;
-        printk(KERN_ERR KBUILD_MODNAME ": failed to get udp header!\n");
-    }
 
     if (ts3init_generate_cookie_ipv4(par, ip, udp, &cookie_hash, &packet_index) &&
         ts3init_fill_set_cookie_payload(skb, par, cookie_hash, packet_index, payload))
     {
-        if (ts3init_send_ipv4_reply(skb, par, ip, udp, payload, sizeof(payload)) == false)
-        {
-            printk(KERN_ERR KBUILD_MODNAME ": failed to send reply!\n");
-        }
-    }
-    else
-    {
-        printk(KERN_ERR KBUILD_MODNAME ": failed to generate reply!\n");
+        ts3init_send_ipv4_reply(skb, par, ip, udp, payload, sizeof(payload));
     }
     return NF_DROP;
 }
