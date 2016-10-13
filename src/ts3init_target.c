@@ -20,6 +20,7 @@
 #ifdef CONFIG_BRIDGE_NETFILTER
 #    include <linux/netfilter_bridge.h>
 #endif
+#include <linux/random.h>
 #include <net/ip.h>
 #include <net/ip6_checksum.h>
 #include <net/ip6_route.h>
@@ -378,7 +379,119 @@ static int ts3init_set_cookie_tg_check(const struct xt_tgchk_param *par)
     }
     
     return 0;
-}   
+}
+
+static inline void
+ts3init_fill_get_cookie_payload(u8 *payload)
+{
+    time_t current_unix_time = ts3init_get_cached_unix_time();
+    payload[TS3INIT_HEADER_CLIENT_LENGTH - 1] = COMMAND_GET_COOKIE;
+    payload[TS3INIT_HEADER_CLIENT_LENGTH + 0] = current_unix_time << 24;
+    payload[TS3INIT_HEADER_CLIENT_LENGTH + 1] = current_unix_time << 16;
+    payload[TS3INIT_HEADER_CLIENT_LENGTH + 2] = current_unix_time << 8;
+    payload[TS3INIT_HEADER_CLIENT_LENGTH + 3] = current_unix_time;
+    get_random_bytes(&payload[TS3INIT_HEADER_CLIENT_LENGTH + 4], 4);
+    memset(&payload[TS3INIT_HEADER_CLIENT_LENGTH + 8], 0, 8);
+}
+
+/*
+ * The 'TS3INIT_MORPH_TO_GET_COOKIE' target handler.
+ * Morphes the incomming packet into a TS3INIT_GET_COOKIE
+ */
+static unsigned int
+ts3init_morph_to_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
+{
+    struct iphdr *ip;
+    struct udphdr *udp, udp_buf;
+    u8 *payload, payload_buf[TS3INIT_HEADER_CLIENT_LENGTH + 16];
+    unsigned int data_len;
+    int length_difference;
+
+    if (!skb_make_writable(skb, 0))
+        return NF_DROP;
+
+    ip  = ip_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
+    if (udp == NULL)
+        return NF_DROP;
+
+    if (ip->frag_off & htons(IP_OFFSET))
+        return NF_DROP;
+
+    data_len = ntohs(udp->len) - sizeof(*udp);
+    if (data_len < 1 || data_len > 512)
+        return NF_DROP;
+
+    length_difference = sizeof(payload_buf) - data_len;
+    if (length_difference > 0)
+        skb_put(skb, length_difference);
+    else if (length_difference < 0)
+        skb_trim(skb, skb->len + length_difference);
+
+    payload = skb_header_pointer(skb, par->thoff + sizeof(udp), sizeof(payload_buf), payload_buf);
+    ts3init_fill_get_cookie_payload(payload);
+
+    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
+    udp->check = 0;
+    udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
+                    ntohs(udp->len), IPPROTO_UDP,
+                    csum_partial(udp, ntohs(udp->len), 0));
+    ip->tot_len = htons(skb->len);
+    skb->ip_summed = CHECKSUM_NONE;
+
+    if (skb->len > dst_mtu(skb_dst(skb)))
+        return NF_DROP;
+
+    return NF_ACCEPT;
+}
+
+/*
+ * The 'TS3INIT_MORPH_TO_GET_COOKIE' target handler.
+ * Morphes the incomming packet into a TS3INIT_GET_COOKIE
+ */
+static unsigned int
+ts3init_morph_to_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
+{
+    struct ipv6hdr *ip;
+    struct udphdr *udp, udp_buf;
+    u8 *payload, payload_buf[TS3INIT_HEADER_CLIENT_LENGTH + 16];
+    unsigned int data_len;
+    int length_difference;
+
+    if (!skb_make_writable(skb, 0))
+        return NF_DROP;
+
+    ip  = ipv6_hdr(skb);
+    udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
+    if (udp == NULL)
+        return NF_DROP;
+
+    data_len = ntohs(udp->len) - sizeof(*udp);
+    if (data_len < 1 || data_len > 512)
+        return NF_DROP;
+
+    length_difference = sizeof(payload_buf) - data_len;
+    if (length_difference > 0)
+        skb_put(skb, length_difference);
+    else if (length_difference < 0)
+        skb_trim(skb, skb->len + length_difference);
+
+    payload = skb_header_pointer(skb, par->thoff + sizeof(udp), sizeof(payload_buf), payload_buf);
+    ts3init_fill_get_cookie_payload(payload);
+
+    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
+    udp->check = 0;
+    udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
+                    ntohs(udp->len), IPPROTO_UDP,
+                    csum_partial(udp, ntohs(udp->len), 0));
+    ip->payload_len = htons(skb->len);
+    skb->ip_summed = CHECKSUM_NONE;
+
+    if (skb->len > dst_mtu(skb_dst(skb)))
+        return NF_DROP;
+
+    return NF_ACCEPT;
+}
 
 static struct xt_target ts3init_tg_reg[] __read_mostly = {
     {
@@ -415,6 +528,22 @@ static struct xt_target ts3init_tg_reg[] __read_mostly = {
         .targetsize  = sizeof(struct xt_ts3init_set_cookie_tginfo),
         .target     = ts3init_set_cookie_ipv6_tg,
         .checkentry = ts3init_set_cookie_tg_check,
+        .me         = THIS_MODULE,
+    },
+    {
+        .name       = "TS3INIT_MORPH_TO_GET_COOKIE",
+        .revision   = 0,
+        .family     = NFPROTO_IPV4,
+        .proto      = IPPROTO_UDP,
+        .target     = ts3init_morph_to_get_cookie_ipv4_tg,
+        .me         = THIS_MODULE,
+    },
+    {
+        .name       = "TS3INIT_MORPH_TO_GET_COOKIE",
+        .revision   = 0,
+        .family     = NFPROTO_IPV6,
+        .proto      = IPPROTO_UDP,
+        .target     = ts3init_morph_to_get_cookie_ipv6_tg,
         .me         = THIS_MODULE,
     },
 };
