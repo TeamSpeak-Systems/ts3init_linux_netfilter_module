@@ -20,34 +20,34 @@
 #include "ts3init_random_seed.h"
 #include "ts3init_target.h"
 
-static void ts3init_morph_to_get_cookie_help(void)
+static void ts3init_get_cookie_help(void)
 {
-    printf("TS3INIT_MORPH_TO_GET_COOKIE takes no options\n\n");
+    printf("TS3INIT_GET_COOKIE takes no options\n\n");
 }
 
-static int ts3init_morph_to_get_cookie_parse(int c, char **argv, int invert, unsigned int *flags,
+static int ts3init_get_cookie_parse(int c, char **argv, int invert, unsigned int *flags,
                                const void *entry, struct xt_entry_target **target)
 {
 	return false;
 }
 
-static void ts3init_morph_to_get_cookie_check(unsigned int flags)
+static void ts3init_get_cookie_check(unsigned int flags)
 {
 }
 
 /* register and init */
-static struct xtables_target ts3init_morph_to_get_cookie_tg_reg =
+static struct xtables_target ts3init_get_cookie_tg_reg =
 {
-	.name          = "TS3INIT_MORPH_TO_GET_COOKIE",
+	.name          = "TS3INIT_GET_COOKIE",
 	.revision      = 0,
 	.family        = NFPROTO_UNSPEC,
 	.version       = XTABLES_VERSION,
-	.help          = ts3init_morph_to_get_cookie_help,
-	.parse         = ts3init_morph_to_get_cookie_parse,
-	.final_check   = ts3init_morph_to_get_cookie_check,
+	.help          = ts3init_get_cookie_help,
+	.parse         = ts3init_get_cookie_parse,
+	.final_check   = ts3init_get_cookie_check,
 };
 
-static __attribute__((constructor)) void ts3init_morph_to_get_cookie_tg_ldr(void)
+static __attribute__((constructor)) void ts3init_get_cookie_tg_ldr(void)
 {
-    xtables_register_target(&ts3init_morph_to_get_cookie_tg_reg);
+    xtables_register_target(&ts3init_get_cookie_tg_reg);
 }

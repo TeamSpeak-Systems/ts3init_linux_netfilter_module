@@ -393,11 +393,11 @@ ts3init_fill_get_cookie_payload(u8 *payload)
 }
 
 /*
- * The 'TS3INIT_MORPH_TO_GET_COOKIE' target handler.
+ * The 'TS3INIT_GET_COOKIE' target handler.
  * Morphes the incomming packet into a TS3INIT_GET_COOKIE
  */
 static unsigned int
-ts3init_morph_to_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
     struct iphdr *ip;
     struct udphdr *udp, udp_buf;
@@ -433,11 +433,11 @@ ts3init_morph_to_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_
 }
 
 /*
- * The 'TS3INIT_MORPH_TO_GET_COOKIE' target handler.
+ * The 'TS3INIT_GET_COOKIE' target handler.
  * Morphes the incomming packet into a TS3INIT_GET_COOKIE
  */
 static unsigned int
-ts3init_morph_to_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
     struct ipv6hdr *ip;
     struct udphdr *udp, udp_buf;
@@ -508,19 +508,19 @@ static struct xt_target ts3init_tg_reg[] __read_mostly = {
         .me         = THIS_MODULE,
     },
     {
-        .name       = "TS3INIT_MORPH_TO_GET_COOKIE",
+        .name       = "TS3INIT_GET_COOKIE",
         .revision   = 0,
         .family     = NFPROTO_IPV4,
         .proto      = IPPROTO_UDP,
-        .target     = ts3init_morph_to_get_cookie_ipv4_tg,
+        .target     = ts3init_get_cookie_ipv4_tg,
         .me         = THIS_MODULE,
     },
     {
-        .name       = "TS3INIT_MORPH_TO_GET_COOKIE",
+        .name       = "TS3INIT_GET_COOKIE",
         .revision   = 0,
         .family     = NFPROTO_IPV6,
         .proto      = IPPROTO_UDP,
-        .target     = ts3init_morph_to_get_cookie_ipv6_tg,
+        .target     = ts3init_get_cookie_ipv6_tg,
         .me         = THIS_MODULE,
     },
 };

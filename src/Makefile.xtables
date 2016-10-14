@@ -1,5 +1,5 @@
 CFLAGS = -O2 -Wall
-LIBS = libxt_ts3init_get_cookie.so libxt_ts3init_get_puzzle.so libxt_TS3INIT_RESET.so libxt_TS3INIT_SET_COOKIE.so libxt_TS3INIT_MORPH_TO_GET_COOKIE.so
+LIBS = libxt_ts3init_get_cookie.so libxt_ts3init_get_puzzle.so libxt_TS3INIT_RESET.so libxt_TS3INIT_SET_COOKIE.so libxt_TS3INIT_GET_COOKIE.so
 all: $(LIBS)
 
 clean:
