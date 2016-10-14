@@ -65,7 +65,7 @@ time_t ts3init_get_cached_unix_time(void)
     return current_unix_time;
 }
 
-bool ts3init_get_cookie_for_packet_index(u8 packet_index, const u8* seed, u64 (*cookie)[2])
+bool ts3init_get_cookie_for_packet_index(u8 packet_index, const u8* random_seed, u64 (*cookie)[2])
 {
     struct ts3init_cache_t* cache;
     u64* result;
@@ -80,7 +80,7 @@ bool ts3init_get_cookie_for_packet_index(u8 packet_index, const u8* seed, u64 (*
     current_unix_time = cache->unix_time;
 
     result = ts3init_get_cookie_seed(current_unix_time,
-             packet_index, &cache->cookie_cache, seed);
+             packet_index, &cache->cookie_cache, random_seed);
 
     if (result)
     {
@@ -91,7 +91,7 @@ bool ts3init_get_cookie_for_packet_index(u8 packet_index, const u8* seed, u64 (*
     return result;
 }
 
-bool ts3init_get_current_cookie(const u8* seed, u64 (*cookie)[2], u8 *packet_index)
+bool ts3init_get_current_cookie(const u8* random_seed, u64 (*cookie)[2], u8 *packet_index)
 {
     struct ts3init_cache_t* cache;
     u64* result;
@@ -108,7 +108,7 @@ bool ts3init_get_current_cookie(const u8* seed, u64 (*cookie)[2], u8 *packet_ind
     *packet_index = current_unix_time % 8;
     
     result = ts3init_get_cookie_seed(current_unix_time,
-             *packet_index, &cache->cookie_cache, seed);
+             *packet_index, &cache->cookie_cache, random_seed);
 
     if (result)
     {

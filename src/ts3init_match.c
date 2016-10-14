@@ -20,7 +20,7 @@
 #include <linux/udp.h>
 #include <linux/time.h>
 #include <linux/percpu.h>
-#include "ts3init_cookie_seed.h"
+#include "ts3init_random_seed.h"
 #include "ts3init_cookie.h"
 #include "ts3init_match.h"
 #include "ts3init_header.h"
@@ -217,7 +217,7 @@ static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_pa
         __u64 cookie_seed[2];
         __u64 cookie, packet_cookie;
 
-        if (ts3init_get_cookie_for_packet_index(ts3_header->payload[8], info->cookie_seed, &cookie_seed) == false)
+        if (ts3init_get_cookie_for_packet_index(ts3_header->payload[8], info->random_seed, &cookie_seed) == false)
             return false;
 
         /* use cookie_seed and ipaddress and port to create a hash

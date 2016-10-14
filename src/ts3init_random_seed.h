@@ -2,18 +2,18 @@
 #define _TS3INIT_COOKIE_SEED_H
 
 enum {
-    COOKIE_SEED_LEN = 60,
-	COOKIE_PATH_MAX = 256,
+    RANDOM_SEED_LEN = 60,
+	RANDOM_SEED_PATH_MAX = 256,
 };
 
 /* 
  * Parses a hexstring into dest.
- * It is assumed that COOKIE_SEED_LEN bytes are to be parsed.
+ * It is assumed that RANDOM_SEED_LEN bytes are to be parsed.
  */
-static inline bool hex2int_seed(const char *src, __u8* dst)
+static inline bool parse_random_seed(const char *src, __u8* dst)
 {
     int i, j;
-    for (i = 0; i < COOKIE_SEED_LEN; ++i)
+    for (i = 0; i < RANDOM_SEED_LEN; ++i)
     {
         int v = 0;
         for ( j = 0; j < 2; ++j)
@@ -35,11 +35,11 @@ static inline bool hex2int_seed(const char *src, __u8* dst)
 /* 
  * Reads a cookie seed from a file.
  */
-static inline bool read_cookie_seed_from_file(const char *module_name, const char *path, __u8* dst)
+static inline bool read_random_seed_from_file(const char *module_name, const char *path, __u8* dst)
 {
 	int n, fd;
-	char text[COOKIE_SEED_LEN * 2], error_message[256];
-	if (strlen(path) > COOKIE_PATH_MAX)
+	char text[RANDOM_SEED_LEN * 2], error_message[256];
+	if (strlen(path) > RANDOM_SEED_PATH_MAX)
 	{
 		xtables_error(PARAMETER_PROBLEM, "%s: path is too long.", module_name);
 		return false;
@@ -56,7 +56,7 @@ static inline bool read_cookie_seed_from_file(const char *module_name, const cha
 
 	n = read(fd, text, sizeof(text));
 	if (n == -1) goto io_error;	
-	else if (n != sizeof(text) || hex2int_seed(text, dst) == false)
+	else if (n != sizeof(text) || parse_random_seed(text, dst) == false)
 	{
 		xtables_error(PARAMETER_PROBLEM, "%s: %s must contain exactly %lu lowercase hex characters", module_name, path, sizeof(text));
 		return false;

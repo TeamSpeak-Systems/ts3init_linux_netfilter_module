@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include "ts3init_cookie_seed.h"
+#include "ts3init_random_seed.h"
 #include "ts3init_target.h"
 
 static void ts3init_reset_help(void)

@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include "ts3init_cookie_seed.h"
+#include "ts3init_random_seed.h"
 #include "ts3init_target.h"
 
 #define param_act(t, s, f) xtables_param_act((t), "ts3init_set_cookie", (s), (f))
@@ -27,20 +27,20 @@ static void ts3init_set_cookie_tg_help(void)
     printf(
         "TS3INIT_SET_COOKIE target options:\n"
         "  --zero-random-sequence       Always return 0 as random sequence.\n"
-        "  --seed <seed>                Seed is a %i byte lowercase hex number in.\n"
+        "  --random-seed <seed>         Seed is a %i byte lowercase hex number in.\n"
         "                               A source could be /dev/random.\n"
-        "  --seed-file <file>           Read the seed from a file.\n",
-        COOKIE_SEED_LEN);
+        "  --random-seed-file <file>    Read the seed from a file.\n",
+        RANDOM_SEED_LEN);
 }
 
 static const struct option ts3init_set_cookie_tg_opts[] = {
     {.name = "zero-random-sequence", .has_arg = false, .val = '1'},
-    {.name = "seed",                 .has_arg = true,  .val = '2'},
-    {.name = "seed-file",            .has_arg = true,  .val = '3'},
+    {.name = "random-seed",          .has_arg = true,  .val = '2'},
+    {.name = "random-seed-file",     .has_arg = true,  .val = '3'},
     {NULL},
 };
 
-static int ts3init_set_cookie_tg_parse(int c, char **argv, 
+static int ts3init_set_cookie_tg_parse(int c, char **argv,
                                        int invert, unsigned int *flags, const void *entry,
                                        struct xt_entry_target **target)
 {
@@ -52,26 +52,26 @@ static int ts3init_set_cookie_tg_parse(int c, char **argv,
         info->specific_options |= TARGET_SET_COOKIE_ZERO_RANDOM_SEQUENCE;
         return true;
     case '2':
-        param_act(XTF_ONLY_ONCE, "--seed", *flags & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT);
-        param_act(XTF_NO_INVERT, "--seed", invert);
-        if (strlen(optarg) != (COOKIE_SEED_LEN * 2))
+        param_act(XTF_ONLY_ONCE, "--random-seed", *flags & TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT);
+        param_act(XTF_NO_INVERT, "--random-seed", invert);
+        if (strlen(optarg) != (RANDOM_SEED_LEN * 2))
             xtables_error(PARAMETER_PROBLEM,
-                "TS3INIT_SET_COOKIE: invalid seed length");
-        if (!hex2int_seed(optarg, info->cookie_seed))
+                "TS3INIT_SET_COOKIE: invalid random seed length");
+        if (!parse_random_seed(optarg, info->random_seed))
             xtables_error(PARAMETER_PROBLEM,
-                "TS3INIT_SET_COOKIE: invalid seed. (not lowercase hex)");
-        info->specific_options |= TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
-        *flags |= TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
+                "TS3INIT_SET_COOKIE: invalid random seed. (not lowercase hex)");
+        info->specific_options |= TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT;
+        *flags |= TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT;
         return true;
 
     case '3':
-        param_act(XTF_ONLY_ONCE, "--seed-file", *flags & TARGET_SET_COOKIE_SEED_FROM_FILE);
-        param_act(XTF_NO_INVERT, "--seed-file", invert);
+        param_act(XTF_ONLY_ONCE, "--random-seed-file", *flags & TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE);
+        param_act(XTF_NO_INVERT, "--random-seed-file", invert);
 
-        if (read_cookie_seed_from_file("TS3INIT_SET_COOKIE", optarg, info->cookie_seed))
-            memcpy(info->cookie_seed_path, optarg, strlen(optarg) + 1);
-        info->specific_options |= TARGET_SET_COOKIE_SEED_FROM_FILE;
-        *flags |= TARGET_SET_COOKIE_SEED_FROM_FILE;
+        if (read_random_seed_from_file("TS3INIT_SET_COOKIE", optarg, info->random_seed))
+            memcpy(info->random_seed_path, optarg, strlen(optarg) + 1);
+        info->specific_options |= TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE;
+        *flags |= TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE;
         return true;
 
     default:
@@ -86,18 +86,18 @@ static void ts3init_set_cookie_tg_save(const void *ip, const struct xt_entry_tar
     {
         printf("--zero-random-sequence ");
     }
-    if (info->specific_options & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT)
+    if (info->specific_options & TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT)
     {
-        printf("--seed ");
-        for (int i = 0; i < COOKIE_SEED_LEN; i++)
+        printf("--random-seed ");
+        for (int i = 0; i < RANDOM_SEED_LEN; i++)
         {
-            printf("%02X", info->cookie_seed[i]);
+            printf("%02X", info->random_seed[i]);
         }
         printf(" ");
     }
-    if (info->specific_options & TARGET_SET_COOKIE_SEED_FROM_FILE)
+    if (info->specific_options & TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE)
     {
-        printf("--seed-file \"%s\" ", info->cookie_seed_path);
+        printf("--random-seed-file \"%s\" ", info->random_seed_path);
     }
 }
 
@@ -110,18 +110,18 @@ static void ts3init_set_cookie_tg_print(const void *ip, const struct xt_entry_ta
 
 static void ts3init_set_cookie_tg_check(unsigned int flags)
 {
-    bool seed_from_argument = flags & TARGET_SET_COOKIE_SEED_FROM_ARGUMENT;
-    bool seed_from_file = flags & TARGET_SET_COOKIE_SEED_FROM_FILE;
-    if (seed_from_argument && seed_from_file)
+    bool random_seed_from_argument = flags & TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT;
+    bool random_seed_from_file = flags & TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE;
+    if (random_seed_from_argument && random_seed_from_file)
     {
         xtables_error(PARAMETER_PROBLEM,
-            "TS3INIT_SET_COOKIE: --seed and --seed-file "
-            "can not be specified at the same time");           
+            "TS3INIT_SET_COOKIE: --random-seed and --random-seed-file "
+            "can not be specified at the same time");
     }
-    if (!seed_from_argument && !seed_from_file)
+    if (!random_seed_from_argument && !random_seed_from_file)
     {
         xtables_error(PARAMETER_PROBLEM,
-            "TS3INIT_SET_COOKIE: either --seed or --seed-file "
+            "TS3INIT_SET_COOKIE: either --random-seed or --random-seed-file "
             "must be specified");
     }
 }

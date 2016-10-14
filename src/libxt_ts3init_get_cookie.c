@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include "ts3init_cookie_seed.h"
+#include "ts3init_random_seed.h"
 #include "ts3init_match.h"
 
 #define param_act(t, s, f) xtables_param_act((t), "ts3init_get_cookie", (s), (f))

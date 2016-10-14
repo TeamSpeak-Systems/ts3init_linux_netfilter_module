@@ -26,7 +26,7 @@
 #include <net/ip6_route.h>
 #include <net/route.h>
 #include "compat_xtables.h"
-#include "ts3init_cookie_seed.h"
+#include "ts3init_random_seed.h"
 #include "ts3init_cookie.h"
 #include "ts3init_target.h"
 #include "ts3init_header.h"
@@ -231,7 +231,7 @@ ts3init_generate_cookie_ipv4(const struct xt_action_param *par,
     const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
     __u64 cookie[2];
 
-    if (ts3init_get_current_cookie(info->cookie_seed, &cookie, packet_index) == false)
+    if (ts3init_get_current_cookie(info->random_seed, &cookie, packet_index) == false)
         return false;
     if (ts3init_calculate_cookie_ipv4(ip, udp, cookie[0], cookie[1], cookie_hash))
         return false;
@@ -250,7 +250,7 @@ ts3init_generate_cookie_ipv6(const struct xt_action_param *par,
     const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
     __u64 cookie[2];
 
-    if (ts3init_get_current_cookie(info->cookie_seed, &cookie, packet_index) == false)
+    if (ts3init_get_current_cookie(info->random_seed, &cookie, packet_index) == false)
         return false;
     if (ts3init_calculate_cookie_ipv6(ip, udp, cookie[0], cookie[1], cookie_hash))
         return false;
