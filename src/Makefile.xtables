@@ -6,8 +6,8 @@ clean:
 	rm -f $(LIBS)
 
 install:
-	cp $(LIBS) /lib/xtables/
-	
+	install -g root -o root -m 644 $(LIBS) /lib/xtables/
+
 lib%.so: lib%.o
 	gcc -shared -fPIC -o $@ $^;
 
