@@ -43,17 +43,17 @@ sudo ${IPTABLES} -A INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
 sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -m set --match-set ts3_authorized${1} src -j TS3_UPDATE_AUTHORIZED
 
 #Allow 3.0.19 and up clients
-sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -p udp -m ts3init_get_cookie --min-client 1459504131 -j TS3INIT_SET_COOKIE --seed-file ${RANDOM_FILE}
+sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -p udp -m ts3init_get_cookie --min-client 1459504131 -j TS3INIT_SET_COOKIE --random-seed-file ${RANDOM_FILE}
 
 #add new connection if cookie is valid
-sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -p udp -m ts3init_get_puzzle --check-cookie --seed-file ${RANDOM_FILE} -j TS3_ACCEPT_NEW
+sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -p udp -m ts3init_get_puzzle --check-cookie --random-seed-file ${RANDOM_FILE} -j TS3_ACCEPT_NEW
 
 #drop the rest
 sudo ${IPTABLES} -A TS3_UDP_TRAFFIC -j DROP
 
 #add new connection to authorized src
 sudo ${IPTABLES} -A TS3_ACCEPT_NEW -j SET --add-set ts3_authorized${1} src
-sudo ${IPTABLES} -A TS3_ACCEPT_NEW -p udp -j TS3INIT_RESET
+sudo ${IPTABLES} -A TS3_ACCEPT_NEW -p udp -j TS3INIT_GET_COOKIE
 
 
 #Allow authorized clients on TCP
