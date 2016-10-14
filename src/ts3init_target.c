@@ -219,40 +219,38 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 /* The header replied by TS3INIT_SET_COOKIE. */
 static const char ts3init_set_cookie_packet_header[TS3INIT_HEADER_SERVER_LENGTH] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_SET_COOKIE };
 
-/* 
- * Returns the current cookie hashed with source/destination address/port,
- * and the current packet_index.
+/*
+ * Returns the current cookie.
  */
 static bool
 ts3init_generate_cookie_ipv4(const struct xt_action_param *par,
                              const struct iphdr *ip, const struct udphdr *udp,
-                             u64 *cookie_hash, u8 *packet_index)
+                             u64 *cookie, u8 *packet_index)
 {
     const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
-    __u64 cookie[2];
+    __u64 cookie_seed[2];
 
-    if (ts3init_get_current_cookie(info->random_seed, &cookie, packet_index) == false)
+    if (ts3init_get_current_cookie_seed(info->random_seed, &cookie_seed, packet_index) == false)
         return false;
-    if (ts3init_calculate_cookie_ipv4(ip, udp, cookie[0], cookie[1], cookie_hash))
+    if (ts3init_calculate_cookie_ipv4(ip, udp, cookie_seed[0], cookie_seed[1], cookie))
         return false;
     return true;
 }
 
-/* 
- * Returns the current cookie hashed with source/destination address/port,
- * and the current packet_index.
+/*
+ * Returns the current cookie.
  */
 static bool
 ts3init_generate_cookie_ipv6(const struct xt_action_param *par, 
                              const struct ipv6hdr *ip, const struct udphdr *udp,
-                             u64 *cookie_hash, u8 *packet_index)
+                             u64 *cookie, u8 *packet_index)
 {
     const struct xt_ts3init_set_cookie_tginfo *info = par->targinfo;
-    __u64 cookie[2];
+    __u64 cookie_seed[2];
 
-    if (ts3init_get_current_cookie(info->random_seed, &cookie, packet_index) == false)
+    if (ts3init_get_current_cookie_seed(info->random_seed, &cookie_seed, packet_index) == false)
         return false;
-    if (ts3init_calculate_cookie_ipv6(ip, udp, cookie[0], cookie[1], cookie_hash))
+    if (ts3init_calculate_cookie_ipv6(ip, udp, cookie_seed[0], cookie_seed[1], cookie))
         return false;
     return true;
 }

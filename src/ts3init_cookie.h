@@ -17,8 +17,8 @@ struct xt_ts3init_cookie_cache
 };
 
 /*
- * Returns the cookie that fits current_time and packet_index.
- * If the cookie is missing in cache it will be generated using 
+ * Returns the cookie seed that fits current_time and packet_index.
+ * If the cookie seed is missing in cache it will be generated using 
  * random_seed and current_time
  */
 __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
