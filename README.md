@@ -87,6 +87,37 @@ ts3init_get_puzzle match options:
 Target extensions
 =================
 
+TS3INIT_GET_COOKIE
+------------------
+Rewrites the packet into a *get_cookie* packet and then accepts it.
+It is assumed that the packet is a ts3init packet of any kind, any other packet
+may or may not result in a valid *get_cookie* packet. Used for older clients, as
+an alternative to `TS3INIT_RESET`. It takes no parameters.
+
+TS3INIT_SET_COOKIE
+------------------
+Generates a *set_cookie* packet to the matched *get_cookie* packet. The orginal
+*get_cookie* packet is dropped. It is assumed that the orginal packet is a 
+*get_cookie* packet, no attempt is made to check if that is true. It should
+always be used with `ts3init_get_puzzle` match.
+
+```
+$ iptables -j TS3INIT_SET_COOKIE -h
+<..>
+TS3INIT_SET_COOKIE target options:
+  --zero-random-sequence       Always return 0 as random sequence.
+  --random-seed <seed>         Seed is a 60 byte lowercase hex number in.
+                               A source could be /dev/random.
+  --random-seed-file <file>    Read the seed from a file.
+```
+
+* `zero-random-sequence` forces the returned *random-sequence* to be always
+  zero. This makes allows the target to not look at the payload of the packet.
+* `random-seed` is used to generate the cookie returned in the *set-cookie*
+  packet. *seed* must be a 120 character long hexstring.
+* `random-seed-file` read the `random-seed` from a file. The file must contain
+  a 120 character long hexstring, without any newlines.
+
 TS3INIT_RESET
 --------------- 
 Drops the packet and sends a *reset* packet back to the sender. The
