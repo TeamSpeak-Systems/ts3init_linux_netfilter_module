@@ -13,7 +13,7 @@ fi
 
 #clear up ${IPTABLES}
 sudo ${IPTABLES} -t raw -D PREROUTING -p udp --dport 9987 -j CT --notrack
-sudo ${IPTABLES} -D INPUT -p udp --dport 9987 -j TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -D INPUT -p udp --dport 9987 \! -f -j TS3_UDP_TRAFFIC
 sudo ${IPTABLES} -D INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
 
 sudo ${IPTABLES} -F TS3_UDP_TRAFFIC

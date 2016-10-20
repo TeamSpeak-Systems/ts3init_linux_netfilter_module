@@ -35,8 +35,10 @@ RANDOM_FILE=`pwd`/${RANDOM_FILE_NAME}
 #disable connection tracking for ts3 server
 sudo ${IPTABLES} -t raw -A PREROUTING -p udp --dport 9987 -j CT --notrack
 
-#move ts3 traffic to TS3_TRAFFIC chain, and filetransfer to TCP chain
-sudo ${IPTABLES} -A INPUT -p udp --dport 9987 -j TS3_UDP_TRAFFIC
+#move ts3 traffic to TS3_TRAFFIC chain (do not allow fragments)
+sudo ${IPTABLES} -A INPUT -p udp --dport 9987 \! -f -j TS3_UDP_TRAFFIC
+
+#move filetransfer to TCP chain
 sudo ${IPTABLES} -A INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
 
 #Allow authorized clients on UDP
