@@ -27,7 +27,7 @@ static void ts3init_set_cookie_tg_help(void)
     printf(
         "TS3INIT_SET_COOKIE target options:\n"
         "  --zero-random-sequence       Always return 0 as random sequence.\n"
-        "  --random-seed <seed>         Seed is a %i byte lowercase hex number in.\n"
+        "  --random-seed <seed>         Seed is a %i byte hex number in.\n"
         "                               A source could be /dev/random.\n"
         "  --random-seed-file <file>    Read the seed from a file.\n",
         RANDOM_SEED_LEN);
