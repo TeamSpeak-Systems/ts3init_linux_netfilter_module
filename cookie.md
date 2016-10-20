@@ -1,17 +1,17 @@
 What is the cookie
 ==================
-The cookie is used to prevent address spoffing, without the firewall having to remember the ip-address of the clients.
+The cookie is used to prevent address spoofing, without the firewall having to remember the ip-address of the clients.
 It does this by forcing the client to send a cookie, it can only get from the server. The cookie is generated from the current time, the source and destination address and port, and a secret that only the server has.
-It works on the same principle that authenticators do. And force the client to reply with the same ip/port to the same server ip/port in order to continue.
+It works on the same principle that authenticators do. This method forces the client to reply with the same ip/port to the same server ip/port in order to continue.
 
 How is the cookie generated
 ===========================
 The cookie is the hashed `ClientIp`, `ServerIp`, `ClientPort` and `ServerPort` using `siphash24` and a key that is one quarter of a `cookie_seed`. Every second another quarter of the `cookie_seed` is used as key.
-The server generates a new `cookie_seed` every 4 seconds, and always keeps 2 `cookie_seeds`. That means a client has atleast 4 seconds, and atmost 8 seconds to reply before the cookie becomes invalid.
+The server generates a new `cookie_seed` every 4 seconds, and always keeps 2 `cookie_seeds`. That means a client has atleast 4 seconds, and atmost 8 seconds to reply before the cookie becomes invalid. ClientIp, ServerIp, ClientPort and ServerPort are in network order.
 
 ```
-cookie_seed = sha512(random_seed << 4 | (time & ~3))
-cookie = siphash24(cookie_seed >> ((time & 3) * 16), ClientIp + ServerIp + ClientPort + ServerPort)
+cookie_seed = sha512(random_seed << 32 | (unix_time & 0xffffffff))
+cookie = siphash24(cookie_seed >> ((time & 3) * 128), Concat(ClientIp, ServerIp, ClientPort, ServerPort))
 ```
 
 What is the `Random-Seed`
@@ -50,7 +50,7 @@ Format of `COMMAND_GET_COOKIE`
 |            RESERVERD          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
-* All fields are encoded in lower encodian, unless otherwise specified.
+* All fields are encoded in big endian, unless otherwise specified.
 * `PacketId` is always `101`.
 * `ClientId` is always `0`.
 * `Type + Flags` is always `0x88`.
