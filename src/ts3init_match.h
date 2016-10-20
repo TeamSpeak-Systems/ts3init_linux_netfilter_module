@@ -31,8 +31,8 @@ struct xt_ts3init_get_cookie_mtinfo
 enum
 {
     CHK_GET_PUZZLE_CHECK_COOKIE              = 1 << 0,
-	CHK_GET_PUZZLE_RANDOM_SEED_FROM_ARGUMENT = 1 << 1,
-	CHK_GET_PUZZLE_RANDOM_SEED_FROM_FILE     = 1 << 2,
+    CHK_GET_PUZZLE_RANDOM_SEED_FROM_ARGUMENT = 1 << 1,
+    CHK_GET_PUZZLE_RANDOM_SEED_FROM_FILE     = 1 << 2,
     CHK_GET_PUZZLE_VALID_MASK               = (1 << 3) - 1,
 };
 

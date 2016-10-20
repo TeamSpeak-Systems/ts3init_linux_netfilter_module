@@ -84,10 +84,10 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
             return false;
     }
 
-	/* payload size check*/
+    /* payload size check*/
     expected_payload_size = ts3init_payload_sizes[ts3_header->command];
     if (data_len != TS3INIT_HEADER_CLIENT_LENGTH + expected_payload_size)
-		return false;
+        return false;
 
     header_data->udp = udp;    
     header_data->ts3_header = ts3_header;

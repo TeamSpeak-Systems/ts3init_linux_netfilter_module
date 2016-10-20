@@ -15,9 +15,9 @@ struct udphdr;
 #define skb_nfmark(skb) (((struct sk_buff *)(skb))->mark)
 
 #ifdef CONFIG_NETWORK_SECMARK
-#	define skb_secmark(skb) ((skb)->secmark)
+#   define skb_secmark(skb) ((skb)->secmark)
 #else
-#	define skb_secmark(skb) 0
+#   define skb_secmark(skb) 0
 #endif
 
 #endif /* COMPAT_SKBUFF_H */

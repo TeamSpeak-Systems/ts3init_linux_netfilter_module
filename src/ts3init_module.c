@@ -33,16 +33,16 @@ MODULE_ALIAS("ip6t_ts3init");
 
 static int __init ts3init_init(void)
 {
-	int error;
-	error = ts3init_match_init();
-	if (error)
+    int error;
+    error = ts3init_match_init();
+    if (error)
         return error;
 
-	error = ts3init_target_init();
-	if (error)
+    error = ts3init_target_init();
+    if (error)
         ts3init_match_exit();
 
-	return error;
+    return error;
 }
 
 static void __exit ts3init_exit(void)

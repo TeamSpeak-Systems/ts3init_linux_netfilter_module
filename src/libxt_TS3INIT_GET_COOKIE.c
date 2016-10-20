@@ -28,7 +28,7 @@ static void ts3init_get_cookie_help(void)
 static int ts3init_get_cookie_parse(int c, char **argv, int invert, unsigned int *flags,
                                const void *entry, struct xt_entry_target **target)
 {
-	return false;
+    return false;
 }
 
 static void ts3init_get_cookie_check(unsigned int flags)
@@ -38,13 +38,13 @@ static void ts3init_get_cookie_check(unsigned int flags)
 /* register and init */
 static struct xtables_target ts3init_get_cookie_tg_reg =
 {
-	.name          = "TS3INIT_GET_COOKIE",
-	.revision      = 0,
-	.family        = NFPROTO_UNSPEC,
-	.version       = XTABLES_VERSION,
-	.help          = ts3init_get_cookie_help,
-	.parse         = ts3init_get_cookie_parse,
-	.final_check   = ts3init_get_cookie_check,
+    .name          = "TS3INIT_GET_COOKIE",
+    .revision      = 0,
+    .family        = NFPROTO_UNSPEC,
+    .version       = XTABLES_VERSION,
+    .help          = ts3init_get_cookie_help,
+    .parse         = ts3init_get_cookie_parse,
+    .final_check   = ts3init_get_cookie_check,
 };
 
 static __attribute__((constructor)) void ts3init_get_cookie_tg_ldr(void)
