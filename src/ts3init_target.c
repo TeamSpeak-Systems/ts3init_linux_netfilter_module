@@ -421,8 +421,8 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
-	                               ntohs(udp->len), IPPROTO_UDP, 
-								   csum_partial(udp, ntohs(udp->len), 0));
+                                   ntohs(udp->len), IPPROTO_UDP, 
+                                   csum_partial(udp, ntohs(udp->len), 0));
     ip->tot_len = htons(skb->len);
     skb->ip_summed = CHECKSUM_NONE;
 
@@ -459,8 +459,8 @@ ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
     udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
     udp->check = 0;
     udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
-	                             ntohs(udp->len), IPPROTO_UDP, 
-								 csum_partial(udp, ntohs(udp->len), 0));
+                                 ntohs(udp->len), IPPROTO_UDP, 
+                                 csum_partial(udp, ntohs(udp->len), 0));
     ip->payload_len = htons(skb->len);
     skb->ip_summed = CHECKSUM_NONE;
 
