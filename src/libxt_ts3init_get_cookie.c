@@ -27,8 +27,9 @@ static void ts3init_get_cookie_help(void)
 {
     printf(
         "ts3init_get_cookie match options:\n"
-        "  --min-client n The sending client needs to be at least version n.\n"
-        "  --check-time sec Check packet send time request. May be off by sec seconds.\n"
+        "  --min-client n                The client needs to be at least version n.\n"
+        "  --check-time sec              Check packet send time request.\n"
+        "                                May be off by sec seconds.\n"
     );
 }
 
