@@ -61,7 +61,6 @@ ts3init_get_cookie match options:
 
 ts3init_get_puzzle
 --------------------
-
 Matches if the packet in question is a valid TeamSpeak 3 *get puzzle* packet
 from the client. There are additional parameters that can be set:
 ```
@@ -82,16 +81,15 @@ ts3init_get_puzzle match options:
   generated on a different machine, provided that those machines have the same
   date and time, and the same seed specified. In other words: The cookie is
   created in a deterministic way, depending only on the current time and the
-  seed. If check-cookie is specified, either random-seed or random-seed-file
-  need to be specified too.
+  seed. If `check-cookie` is specified, either `random-seed` or 
+  `random-seed-file` need to be specified too.
 
 Target extensions
 =================
 
 TS3INIT_RESET
 --------------- 
-
-This target drops the packet and sends a *reset* packet back to the sender. The
+Drops the packet and sends a *reset* packet back to the sender. The
 sender should always be the TeamSpeak 3 client. Starting with the TeamSpeak 3.1
 client, the client will react to the reset packet by resending the *get cookie*
 to the server. Older clients do not handle this packet. It takes no parameters.
