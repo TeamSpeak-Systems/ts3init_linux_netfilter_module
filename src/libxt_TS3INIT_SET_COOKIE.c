@@ -20,7 +20,7 @@
 #include "ts3init_random_seed.h"
 #include "ts3init_target.h"
 
-#define param_act(t, s, f) xtables_param_act((t), "ts3init_set_cookie", (s), (f))
+#define param_act(t, s, f) xtables_param_act((t), "TS3INIT_SET_COOKIE", (s), (f))
 
 static void ts3init_set_cookie_tg_help(void)
 {
