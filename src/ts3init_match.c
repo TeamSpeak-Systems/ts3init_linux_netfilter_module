@@ -59,11 +59,11 @@ static bool check_client_header(const struct sk_buff *skb, const struct xt_actio
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len < sizeof(header_data->ts3_header_buf))
+    if (data_len < TS3INIT_HEADER_CLIENT_LENGTH)
         return false;
 
     ts3_header = (struct ts3_init_client_header*) skb_header_pointer(skb, 
-        par->thoff + sizeof(*udp), sizeof(header_data->ts3_header_buf),
+        par->thoff + sizeof(*udp), TS3INIT_HEADER_CLIENT_LENGTH,
         &header_data->ts3_header_buf);
 
     if (!ts3_header) return false;
@@ -105,10 +105,10 @@ static bool check_server_header(const struct sk_buff *skb, const struct xt_actio
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len < sizeof(header_data->ts3_header_buf)) return false;
+    if (data_len < TS3INIT_HEADER_SERVER_LENGTH) return false;
 
     ts3_header = (struct ts3_init_server_header*) skb_header_pointer(skb, 
-        par->thoff + sizeof(*udp), sizeof(header_data->ts3_header_buf),
+        par->thoff + sizeof(*udp), TS3INIT_HEADER_SERVER_LENGTH,
         &header_data->ts3_header_buf);
 
     if (!ts3_header) return false;
@@ -122,13 +122,13 @@ static bool check_server_header(const struct sk_buff *skb, const struct xt_actio
     return true;
 }
 
-static inline char* get_payload(const struct sk_buff *skb, const struct xt_action_param *par,
+static inline __u8* get_payload(const struct sk_buff *skb, const struct xt_action_param *par,
                          const struct ts3_init_checked_client_header_data* header_data,
-                         char *buf, size_t buf_size)
+                         __u8 *buf, size_t buf_size)
 {
-    const int header_len = sizeof(*header_data->udp) + sizeof(*header_data->ts3_header);
+    const int header_len = sizeof(*header_data->udp) + TS3INIT_HEADER_CLIENT_LENGTH;
     unsigned int data_len = be16_to_cpu(header_data->udp->len) - header_len;
-    if (data_len != buf_size)
+    if (data_len < buf_size)
         return NULL;
     return skb_header_pointer(skb, par->thoff + header_len, buf_size, buf);
 }
@@ -191,7 +191,7 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
-        char *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_COOKIE]];
+        __u8 *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_COOKIE]];
         time_t current_unix_time, packet_unix_time;
 
         payload = get_payload(skb, par, &header_data, payload_buf, sizeof(payload_buf));
@@ -257,7 +257,7 @@ static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_pa
 
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
-        char *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_PUZZLE]];
+        __u8 *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_PUZZLE]];
         __u64 cookie_seed[2];
         __u64 cookie, packet_cookie;
 
