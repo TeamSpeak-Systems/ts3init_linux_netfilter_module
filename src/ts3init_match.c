@@ -242,8 +242,8 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
 
 /*
  * The 'ts3init_get_cookie' match handler.
- * Checks that the packet is a valid COMMAND_GET_PUZZLE, and if the replied
- * with the correct cookie.
+ * Checks that the packet is a valid COMMAND_GET_PUZZLE, and if the client
+ * replied with the correct cookie.
  */
 static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
