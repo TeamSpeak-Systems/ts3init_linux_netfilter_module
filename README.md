@@ -44,7 +44,7 @@ Match extensions
 ================
 
 ts3init_get_cookie
---------------------
+------------------
 Matches if the packet in question is a valid TeamSpeak 3 *get cookie* packet
 from the client.
 There are additional parameters that can be set:
@@ -64,7 +64,8 @@ ts3init_get_cookie match options:
 ts3init_get_puzzle
 --------------------
 Matches if the packet in question is a valid TeamSpeak 3 *get puzzle* packet
-from the client. There are additional parameters that can be set:
+from the client.
+There are additional parameters that can be set:
 ```
 $ iptables -m ts3init_get_puzzle -h
 <..>
