@@ -46,4 +46,20 @@ struct xt_ts3init_get_puzzle_mtinfo
     char random_seed_path[RANDOM_SEED_PATH_MAX];
 };
 
+/* Enums and structs for generic ts3init */
+enum
+{
+    CHK_TS3INIT_CLIENT              = 1 << 0,
+    CHK_TS3INIT_SERVER              = 1 << 1,
+    CHK_TS3INIT_COMMAND             = 1 << 2,
+    CHK_TS3INIT_VALID_MASK         = (1 << 3) - 1,
+};
+
+struct xt_ts3init_mtinfo
+{
+    __u8 common_options;
+    __u8 specific_options;
+    __u16 reserved1;
+	__u8 command;
+};
 #endif /* _TS3INIT_MATCH_H */

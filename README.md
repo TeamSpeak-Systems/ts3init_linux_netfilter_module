@@ -86,6 +86,23 @@ ts3init_get_puzzle match options:
   `check-cookie` is specified, either `random-seed` or `random-seed-file` needs
   to be specified too.
 
+ts3init
+--------------------
+Matches a ts3init packet, by checking if the packet starts with the *TS3INIT1*.
+Additional header checks for client and server packets can be specified:
+```
+$ iptables -m ts3init -h
+<..>
+ts3init match options:
+  --client                     Match ts3init client packets.
+  --server                     Match ts3init server packets.
+  --command <command>          Match packets with the specified command.
+```
+* `client` checks that the packet has a valid ts3init client header
+* `server` checks that the packet has a valid ts3init server header
+* `command` checks that the packet has the specified command in its header.
+  Requires either --client or --server.
+  
 Target extensions
 =================
 

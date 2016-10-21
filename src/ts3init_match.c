@@ -31,35 +31,39 @@ static const struct ts3_init_header_tag ts3init_header_tag_signature =
     { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
 
 
-struct ts3_init_checked_header_data
+struct ts3_init_checked_client_header_data
 {
     struct udphdr *udp, udp_buf;
-    struct ts3_init_header* ts3_header, ts3_header_buf;
+    struct ts3_init_client_header* ts3_header, ts3_header_buf;
 };
 
-static int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
+struct ts3_init_checked_server_header_data
+{
+    struct udphdr *udp, udp_buf;
+    struct ts3_init_server_header* ts3_header, ts3_header_buf;
+};
+
+static const int ts3init_payload_sizes[] = { 16, 20, 20, 244, -1, 1 };
 
 /* 
  * Check that skb contains a valid TS3INIT client header.
  * Also initializes header_data, and checks client version.
  */
-static bool check_header(const struct sk_buff *skb, const struct xt_action_param *par,
-    struct ts3_init_checked_header_data* header_data, __u32 min_client_version)
+static bool check_client_header(const struct sk_buff *skb, const struct xt_action_param *par,
+    struct ts3_init_checked_client_header_data* header_data, __u32 min_client_version)
 {
     unsigned int data_len;
     struct udphdr *udp;
-    struct ts3_init_header* ts3_header;
-    int expected_payload_size;
+    struct ts3_init_client_header* ts3_header;
 
     udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
     data_len = be16_to_cpu(udp->len) - sizeof(*udp);
 
-    if (data_len < TS3INIT_HEADER_CLIENT_LENGTH ||
-        data_len > sizeof(header_data->ts3_header_buf))
+    if (data_len < sizeof(header_data->ts3_header_buf))
         return false;
 
-    ts3_header = (struct ts3_init_header*) skb_header_pointer(skb, 
-        par->thoff + sizeof(*udp), data_len,
+    ts3_header = (struct ts3_init_client_header*) skb_header_pointer(skb, 
+        par->thoff + sizeof(*udp), sizeof(header_data->ts3_header_buf),
         &header_data->ts3_header_buf);
 
     if (!ts3_header) return false;
@@ -68,7 +72,6 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
     if (ts3_header->packet_id != cpu_to_be16(101)) return false;
     if (ts3_header->client_id != 0) return false;
     if (ts3_header->flags != 0x88) return false;
-    if (ts3_header->command >= COMMAND_MAX) return false;
 
     /* check min_client_version if needed */
     if (min_client_version)
@@ -84,14 +87,50 @@ static bool check_header(const struct sk_buff *skb, const struct xt_action_param
             return false;
     }
 
-    /* payload size check*/
-    expected_payload_size = ts3init_payload_sizes[ts3_header->command];
-    if (data_len != TS3INIT_HEADER_CLIENT_LENGTH + expected_payload_size)
-        return false;
-
-    header_data->udp = udp;    
+    header_data->udp = udp;
     header_data->ts3_header = ts3_header;
     return true;
+}
+
+/*
+ * Check that skb contains a valid TS3INIT server header.
+ */
+static bool check_server_header(const struct sk_buff *skb, const struct xt_action_param *par,
+    struct ts3_init_checked_server_header_data* header_data)
+{
+    unsigned int data_len;
+    struct udphdr *udp;
+    struct ts3_init_server_header* ts3_header;
+
+    udp = skb_header_pointer(skb, par->thoff, sizeof(*udp), &header_data->udp_buf);
+    data_len = be16_to_cpu(udp->len) - sizeof(*udp);
+
+    if (data_len < sizeof(header_data->ts3_header_buf)) return false;
+
+    ts3_header = (struct ts3_init_server_header*) skb_header_pointer(skb, 
+        par->thoff + sizeof(*udp), sizeof(header_data->ts3_header_buf),
+        &header_data->ts3_header_buf);
+
+    if (!ts3_header) return false;
+
+    if (ts3_header->tag.tag64 != ts3init_header_tag_signature.tag64) return false;
+    if (ts3_header->packet_id != cpu_to_be16(101)) return false;
+    if (ts3_header->flags != 0x88) return false;
+
+    header_data->udp = udp;
+    header_data->ts3_header = ts3_header;
+    return true;
+}
+
+static inline char* get_payload(const struct sk_buff *skb, const struct xt_action_param *par,
+                         const struct ts3_init_checked_client_header_data* header_data,
+                         char *buf, size_t buf_size)
+{
+    const int header_len = sizeof(*header_data->udp) + sizeof(*header_data->ts3_header);
+    unsigned int data_len = be16_to_cpu(header_data->udp->len) - header_len;
+    if (data_len != buf_size)
+        return NULL;
+    return skb_header_pointer(skb, par->thoff + header_len, buf_size, buf);
 }
 
 /*
@@ -143,24 +182,29 @@ static bool
 ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_cookie_mtinfo *info = par->matchinfo;
-    struct ts3_init_checked_header_data header_data;
+    struct ts3_init_checked_client_header_data header_data;
 
-    if (!check_header(skb, par, &header_data, info->min_client_version))
+    if (!check_client_header(skb, par, &header_data, info->min_client_version))
         return false;
 
     if (header_data.ts3_header->command != COMMAND_GET_COOKIE) return false;
 
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
+        char *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_COOKIE]];
         time_t current_unix_time, packet_unix_time;
+
+        payload = get_payload(skb, par, &header_data, payload_buf, sizeof(payload_buf));
+        if (!payload)
+            return false;
 
         current_unix_time = ts3init_get_cached_unix_time();
 
         packet_unix_time =
-            header_data.ts3_header->payload[0] << 24 |
-            header_data.ts3_header->payload[1] << 16 |
-            header_data.ts3_header->payload[2] << 8  |
-            header_data.ts3_header->payload[3];
+            payload[0] << 24 |
+            payload[1] << 16 |
+            payload[2] << 8  |
+            payload[3];
 
         if (abs(current_unix_time - packet_unix_time) > info->max_utc_offset)
             return false;
@@ -204,20 +248,24 @@ static int ts3init_get_cookie_mt_check(const struct xt_mtchk_param *par)
 static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
     const struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
-    struct ts3_init_checked_header_data header_data;
+    struct ts3_init_checked_client_header_data header_data;
 
-    if (!check_header(skb, par, &header_data, info->min_client_version))
+    if (!check_client_header(skb, par, &header_data, info->min_client_version))
         return false;
 
     if (header_data.ts3_header->command != COMMAND_GET_PUZZLE) return false;
 
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
-        struct ts3_init_header* ts3_header = header_data.ts3_header;
+        char *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_PUZZLE]];
         __u64 cookie_seed[2];
         __u64 cookie, packet_cookie;
 
-        if (ts3init_get_cookie_seed_for_packet_index(ts3_header->payload[8], info->random_seed, &cookie_seed) == false)
+        payload = get_payload(skb, par, &header_data, payload_buf, sizeof(payload_buf));
+        if (!payload)
+            return false;
+
+        if (ts3init_get_cookie_seed_for_packet_index(payload[8], info->random_seed, &cookie_seed) == false)
             return false;
 
         /* use cookie_seed and ipaddress and port to create a hash
@@ -228,10 +276,10 @@ static bool ts3init_get_puzzle_mt(const struct sk_buff *skb, struct xt_action_pa
         /* compare cookie with payload bytes 0-7. if equal, cookie
          * is valid */
 
-        packet_cookie = (((u64)((ts3_header->payload)[0])) | ((u64)((ts3_header->payload)[1]) << 8) |
-           ((u64)((ts3_header->payload)[2]) << 16) | ((u64)((ts3_header->payload)[3]) << 24) |
-           ((u64)((ts3_header->payload)[4]) << 32) | ((u64)((ts3_header->payload)[5]) << 40) |
-           ((u64)((ts3_header->payload)[6]) << 48) | ((u64)((ts3_header->payload)[7]) << 56));
+        packet_cookie = (((u64)((payload)[0])) | ((u64)((payload)[1]) << 8) |
+           ((u64)((payload)[2]) << 16) | ((u64)((payload)[3]) << 24) |
+           ((u64)((payload)[4]) << 32) | ((u64)((payload)[5]) << 40) |
+           ((u64)((payload)[6]) << 48) | ((u64)((payload)[7]) << 56));
 
         if (packet_cookie != cookie) return false;
     }
@@ -266,6 +314,76 @@ static int ts3init_get_puzzle_mt_check(const struct xt_mtchk_param *par)
     return 0;
 }
 
+/*
+ * The 'ts3init' match handler.
+ * Checks that the packet is a valid ts3init packet
+ */
+static bool ts3init_mt(const struct sk_buff *skb, struct xt_action_param *par)
+{
+    const struct xt_ts3init_mtinfo *info = par->matchinfo;
+
+    if (info->specific_options & CHK_TS3INIT_CLIENT)
+    {
+        struct ts3_init_checked_client_header_data header_data;
+
+        if (!check_client_header(skb, par, &header_data, 0))
+            return false;
+        if (info->specific_options & CHK_TS3INIT_COMMAND)
+        {
+            if (header_data.ts3_header->command != info->command)
+                return false;
+        }
+    }
+    else if (info->specific_options & CHK_TS3INIT_SERVER)
+    {
+        struct ts3_init_checked_server_header_data header_data;
+
+        if (!check_server_header(skb, par, &header_data))
+            return false;
+        if (info->specific_options & CHK_TS3INIT_COMMAND)
+        {
+            if (header_data.ts3_header->command != info->command)
+                return false;
+        }
+    }
+    else
+    {
+        struct udphdr *udp, udp_buf;
+        u64 *signature, signature_buf;
+
+        udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
+        if (!udp)
+            return false;
+        signature = skb_header_pointer(skb, par->thoff + sizeof(*udp),
+                        sizeof(signature_buf), &signature_buf);
+
+        if (!signature || *signature != ts3init_header_tag_signature.tag64)
+            return false;
+    }
+    return true;
+}
+
+/*
+ * Validates matchinfo recieved from userspace.
+ */
+static int ts3init_check(const struct xt_mtchk_param *par)
+{
+    struct xt_ts3init_get_puzzle_mtinfo *info = par->matchinfo;
+
+    if (info->common_options & ~(CHK_COMMON_VALID_MASK))
+    {
+        printk(KERN_ERR KBUILD_MODNAME ": invalid (common) options for ts3init\n");
+        return -EINVAL;
+    }
+
+    if (info->specific_options & ~(CHK_TS3INIT_VALID_MASK))
+    {
+        printk(KERN_ERR KBUILD_MODNAME ": invalid (specific) options for ts3init\n");
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 static struct xt_match ts3init_mt_reg[] __read_mostly =
 {
@@ -307,6 +425,16 @@ static struct xt_match ts3init_mt_reg[] __read_mostly =
         .matchsize  = sizeof(struct xt_ts3init_get_puzzle_mtinfo),
         .match      = ts3init_get_puzzle_mt,
         .checkentry = ts3init_get_puzzle_mt_check,
+        .me         = THIS_MODULE,
+    },
+    {
+        .name       = "ts3init",
+        .revision   = 0,
+        .family     = NFPROTO_UNSPEC,
+        .proto      = IPPROTO_UDP,
+        .matchsize  = sizeof(struct xt_ts3init_mtinfo),
+        .match      = ts3init_mt,
+        .checkentry = ts3init_check,
         .me         = THIS_MODULE,
     },
 };

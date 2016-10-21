@@ -22,7 +22,7 @@ struct ts3_init_header_tag
 /* 
  * Header of a TS3INIT client packet.
  */
-struct ts3_init_header
+struct ts3_init_client_header
 {
     struct ts3_init_header_tag tag;
     __be16 packet_id;
@@ -30,7 +30,17 @@ struct ts3_init_header
     __u8   flags;
     __u8   client_version[4];
     __u8   command;
-    __u8   payload[20];
+};
+
+/* 
+ * Header of a TS3INIT server packet.
+ */
+struct ts3_init_server_header
+{
+    struct ts3_init_header_tag tag;
+    __be16 packet_id;
+    __u8   flags;
+    __u8   command;
 };
 
 /*
