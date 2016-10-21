@@ -62,8 +62,8 @@ static int ts3init_parse(int c, char **argv, int invert, unsigned int *flags,
         return true;
 
     case '3':
-        param_act(XTF_ONLY_ONCE, "--random-seed", info->specific_options & CHK_TS3INIT_COMMAND);
-        param_act(XTF_NO_INVERT, "--random-seed", invert);
+        param_act(XTF_ONLY_ONCE, "--command", info->specific_options & CHK_TS3INIT_COMMAND);
+        param_act(XTF_NO_INVERT, "--command", invert);
         command = atoi(optarg);
         if (command < 0 || command > 255)
             xtables_error(PARAMETER_PROBLEM,
