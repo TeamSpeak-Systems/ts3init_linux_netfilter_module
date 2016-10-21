@@ -5,10 +5,12 @@ if [ "$1" == "4" ]
 then
   IPTABLES=iptables
   IPFAMILY=inet
+  FRAGMENT_FLAG="! -f "
 elif [ "$1" == "6" ]
 then
   IPTABLES=ip6tables
   IPFAMILY=inet6
+  FRAGMENT_FLAG=""
 else
   echo "specify either 4 or 6 as a parameter for ipv4 or ipv6";
   exit -1
@@ -36,7 +38,7 @@ RANDOM_FILE=`pwd`/${RANDOM_FILE_NAME}
 sudo ${IPTABLES} -t raw -A PREROUTING -p udp --dport 9987 -j CT --notrack
 
 #move ts3 traffic to TS3_TRAFFIC chain (do not allow fragments)
-sudo ${IPTABLES} -A INPUT -p udp --dport 9987 \! -f -j TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -A INPUT -p udp --dport 9987 ${FRAGMENT_FLAG} -j TS3_UDP_TRAFFIC
 
 #move filetransfer to TCP chain
 sudo ${IPTABLES} -A INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC

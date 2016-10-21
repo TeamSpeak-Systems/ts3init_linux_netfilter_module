@@ -11,10 +11,12 @@ if [ "$1" == "4" ]
 then
   IPTABLES=iptables
   IPFAMILY=inet
+  FRAGMENT_FLAG="! -f "
 elif [ "$1" == "6" ]
 then
   IPTABLES=ip6tables
   IPFAMILY=inet6
+  FRAGMENT_FLAG=""
 else
   echo "specify either 4 or 6 as a parameter for ipv4 or ipv6";
   exit -1
@@ -32,7 +34,6 @@ sudo ${IPTABLES} -N TS3_UDP_TRAFFIC_AUTHORIZING
 sudo ${IPTABLES} -N TS3_UDP_TRAFFIC_AUTHORIZED
 sudo ${IPTABLES} -N TS3_TCP_TRAFFIC
 sudo ${IPTABLES} -N TS3_ACCEPT_AUTHORIZING
-sudo ${IPTABLES} -N TS3_UPDATE_AUTHORIZED
 sudo ${IPTABLES} -N OUT_TS3
 sudo ${IPTABLES} -N OUT_TS3_AUTHORIZING
 sudo ${IPTABLES} -N OUT_TS3_AUTHORIZED
@@ -54,7 +55,7 @@ sudo ${IPTABLES} -t raw -A PREROUTING -p udp --dport 9987 -j CT --notrack
 sudo ${IPTABLES} -t raw -A OUTPUT -p udp --sport 9987 -j CT --notrack
 
 #move ts3 traffic to TS3_UDP_TRAFFIC chain (do not allow fragments)
-sudo ${IPTABLES} -A INPUT -p udp --dport 9987 \! -f -j TS3_UDP_TRAFFIC
+sudo ${IPTABLES} -A INPUT -p udp --dport 9987 ${FRAGMENT_FLAG} -j TS3_UDP_TRAFFIC
 
 #move filetransfer to TS3_TCP_TRAFFIC chain
 sudo ${IPTABLES} -A INPUT -p tcp --dport 30033 -j TS3_TCP_TRAFFIC
@@ -94,7 +95,7 @@ sudo ${IPTABLES} -A TS3_TCP_TRAFFIC -p tcp --syn -m connlimit --connlimit-above 
 sudo ${IPTABLES} -A TS3_TCP_TRAFFIC -j ACCEPT
 
 #watch server->client traffic
-sudo ${IPTABLES} -A OUTPUT -p udp --sport 9987 \! -f -j OUT_TS3
+sudo ${IPTABLES} -A OUTPUT -p udp --sport 9987 ${FRAGMENT_FLAG} -j OUT_TS3
 
 #Move clients in the authorized phase to the OUT_TS3_AUTHORIZED chain.
 sudo ${IPTABLES} -A OUT_TS3 -m set --match-set ts3_authorized${1} dst,dst -j OUT_TS3_AUTHORIZED
@@ -104,8 +105,7 @@ sudo ${IPTABLES} -A OUT_TS3 -m set --match-set ts3_authorizing${1} dst,dst -j OU
 sudo ${IPTABLES} -A OUT_TS3 -j ACCEPT
 
 #Is this still ts3init (not fully connected)
-#This is done by matching TS3INIT headers on SERVER packets
-sudo ${IPTABLES} -A OUT_TS3_AUTHORIZING -m u32 --u32 "0>>22&0x3C@8=0x54533349 && 0>>22&0x3C@12=0x4E495431" -j ACCEPT
+sudo ${IPTABLES} -A OUT_TS3_AUTHORIZING -p udp -m ts3init --server -j ACCEPT
 #else this connection is accepeted(authorized) now
 sudo ${IPTABLES} -A OUT_TS3_AUTHORIZING -j OUT_TS3_ACCEPT_AUTHORIZED
 
