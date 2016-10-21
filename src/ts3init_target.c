@@ -178,7 +178,7 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
 }
 
 /* The payload replied by TS3INIT_RESET. */
-static const char ts3init_reset_packet[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_RESET, 0 };
+static const char ts3init_reset_packet[] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0, 0x65, 0x88, COMMAND_RESET, 0 };
 
 /* 
  * The 'TS3INIT_RESET' target handler.
@@ -217,7 +217,7 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
 }
 
 /* The header replied by TS3INIT_SET_COOKIE. */
-static const char ts3init_set_cookie_packet_header[TS3INIT_HEADER_SERVER_LENGTH] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0x65, 0, 0x88, COMMAND_SET_COOKIE };
+static const char ts3init_set_cookie_packet_header[TS3INIT_HEADER_SERVER_LENGTH] = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1', 0, 0x65, 0x88, COMMAND_SET_COOKIE };
 
 /*
  * Returns the current cookie.
