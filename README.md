@@ -15,6 +15,13 @@ handle the anti spoofing stages of a new TeamSpeak 3 connection. This could be
 done on a different machine than the one the TeamSpeak 3 server is executing
 on.
 
+Current version
+===============
+The current release is version 0.1. This version is a beta and has by no means
+been tested in a production environment. At this stage this software is merely
+a proof of concept. We invite the TeamSpeak community and of course the Linux
+community to test this tool and to contribute improvements and new ideas.
+
 How to install
 ==============
 
