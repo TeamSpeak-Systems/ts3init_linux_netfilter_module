@@ -106,7 +106,9 @@ sudo ${IPTABLES} -A OUT_TS3 -j ACCEPT
 
 #Is this still ts3init (not fully connected)
 sudo ${IPTABLES} -A OUT_TS3_AUTHORIZING -p udp -m ts3init --server -j ACCEPT
-#else this connection is accepeted(authorized) now
+#else this connection is accepeted(authorized) now.
+#Note that this is not really true. This only means the server accepted the client puzzle.
+#The conection request could still be rejected, because of a wrong password or other reasons.
 sudo ${IPTABLES} -A OUT_TS3_AUTHORIZING -j OUT_TS3_ACCEPT_AUTHORIZED
 
 #update/add timeout in set and allow traffic
@@ -117,4 +119,3 @@ sudo ${IPTABLES} -A  OUT_TS3_AUTHORIZED -j ACCEPT
 #accept connection as authorized. Remove from authorizing and treat as accepted
 sudo ${IPTABLES} -A OUT_TS3_ACCEPT_AUTHORIZED -j SET --del-set ts3_authorizing${1} dst,dst
 sudo ${IPTABLES} -A OUT_TS3_ACCEPT_AUTHORIZED -j OUT_TS3_AUTHORIZED
-

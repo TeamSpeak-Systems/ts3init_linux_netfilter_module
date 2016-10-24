@@ -62,7 +62,7 @@ ts3init_get_cookie match options:
   on the server. If they differ too much, the packet is not matched.
 
 ts3init_get_puzzle
---------------------
+------------------
 Matches if the packet in question is a valid TeamSpeak 3 *get puzzle* packet
 from the client.
 There are additional parameters that can be set:
@@ -88,7 +88,7 @@ ts3init_get_puzzle match options:
   to be specified too.
 
 ts3init
---------------------
+-------
 Matches a ts3init packet, by checking if the packet starts with the *TS3INIT1*.
 Additional header checks for client and server packets can be specified:
 ```
@@ -139,7 +139,7 @@ TS3INIT_SET_COOKIE target options:
   a 120 character long hexstring, without any newlines.
 
 TS3INIT_RESET
---------------- 
+-------------
 Drops the packet and sends a *reset* packet back to the sender. The
 sender should always be the TeamSpeak 3 client. Starting with the TeamSpeak 3.1
 client, the client will react to the reset packet by resending the *get cookie*
@@ -161,9 +161,31 @@ as follows:
   reply with `TS3INIT_RESET`
 * Drop all other packets
 
-It is even possible to make a more detailed firewall. Perhaps connection
-tracking could be used instead of ipset.
+It is possible to make a more detailed firewall.
 
 Example iptables setup
 ======================
+There are two examples included: _simple_ and _complex_. Both use ipset to
+create a set of whitelisted ip addresses that are allowed to send packets to the
+TeamSpeak3 server. The simple example does the bare minimum to do the ip
+addresss authentication on the firewall, and to protect the file transfer (tcp)
+port from traffic from unverified ip addresses.
+
+The complex example is a bit more advanced. It keeps three ipsets. Authorizing
+authorized and authorized_ft.
+
+The autorizing set stores ip addresses and ports for connections that have
+verified ip addresses, but did not yet complete the puzzle phase on the ts3
+server.
+
+The authorized set keeps ip addresses and ports that have completed the puzzle
+phase on the server and are assumed to be authorized. It is technically not
+true that the server has accepted this connection. It could still reject it
+because the password is wrong, or the server is full, or other reasons. But for
+this example, it is good enough.
+
+The authorized_ft set keeps a list of authorized ip addresses (not ports). Only
+these ip addresses are allowed to send traffic to the file transfer
+port. Since there is no way to know in advance what source port the TeamSpeak 3
+client is going to use for file transfer, this is the best we can do.
 
