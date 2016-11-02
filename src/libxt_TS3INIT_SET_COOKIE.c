@@ -81,6 +81,7 @@ static int ts3init_set_cookie_tg_parse(int c, char **argv,
 
 static void ts3init_set_cookie_tg_save(const void *ip, const struct xt_entry_target *target)
 {
+    int i;
     const struct xt_ts3init_set_cookie_tginfo *info = (const void *)target->data;
     if (info->specific_options & TARGET_SET_COOKIE_ZERO_RANDOM_SEQUENCE)
     {
@@ -89,7 +90,7 @@ static void ts3init_set_cookie_tg_save(const void *ip, const struct xt_entry_tar
     if (info->specific_options & TARGET_SET_COOKIE_RANDOM_SEED_FROM_ARGUMENT)
     {
         printf("--random-seed ");
-        for (int i = 0; i < RANDOM_SEED_LEN; i++)
+        for (i = 0; i < RANDOM_SEED_LEN; i++)
         {
             printf("%02X", info->random_seed[i]);
         }
