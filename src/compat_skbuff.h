@@ -20,4 +20,19 @@ struct udphdr;
 #   define skb_secmark(skb) 0
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+static inline int skb_put_padto(struct sk_buff *skb, unsigned int len)
+{
+    unsigned int size = skb->len;
+ 
+    if (unlikely(size < len)) {
+        len -= size;
+        if (skb_pad(skb, len)) return -ENOMEM;
+        __skb_put(skb, len);
+    }
+
+    return 0;
+}
+#endif
+
 #endif /* COMPAT_SKBUFF_H */
