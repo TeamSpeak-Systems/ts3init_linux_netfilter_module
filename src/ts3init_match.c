@@ -13,6 +13,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/skbuff.h>
 #include <linux/ip.h>
