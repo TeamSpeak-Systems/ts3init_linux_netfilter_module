@@ -22,6 +22,17 @@ been tested in a production environment. At this stage this software is merely
 a proof of concept. We invite the TeamSpeak community and of course the Linux
 community to test this tool and to contribute improvements and new ideas.
 
+prerequisites
+=============
+In order to compile and install this software you need the following things:
+* Linux kernel headers (version 2.6.35 or greater)
+* Iptables development headers
+* GCC (version 4.6.0 or greater)
+
+Usually these can be installed using your package manager (yum/apt-get/etc).
+Usually these packages resemble the names "Linux-header-<..>", "iptables-dev",
+"GCC"
+
 How to install
 ==============
 
