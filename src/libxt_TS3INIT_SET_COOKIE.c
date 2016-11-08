@@ -98,7 +98,7 @@ static void ts3init_set_cookie_tg_save(const void *ip, const struct xt_entry_tar
     }
     if (info->specific_options & TARGET_SET_COOKIE_RANDOM_SEED_FROM_FILE)
     {
-        printf("--random-seed-file \"%s\" ", info->random_seed_path);
+        printf(" --random-seed-file \"%s\" ", info->random_seed_path);
     }
 }
 
