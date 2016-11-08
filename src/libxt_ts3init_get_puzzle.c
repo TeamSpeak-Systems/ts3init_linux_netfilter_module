@@ -103,15 +103,15 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
     const struct xt_ts3init_get_puzzle_mtinfo *info = (const void *)match->data;
     if (info->common_options & CHK_COMMON_CLIENT_VERSION)
     {
-        printf("--min-client %u ", info->min_client_version + CLIENT_VERSION_OFFSET);
+        printf(" --min-client %u ", info->min_client_version + CLIENT_VERSION_OFFSET);
     }
     if (info->specific_options & CHK_GET_PUZZLE_CHECK_COOKIE)
     {
-        printf("--check-cookie ");
+        printf(" --check-cookie ");
     }
     if (info->specific_options & CHK_GET_PUZZLE_RANDOM_SEED_FROM_ARGUMENT)
     {
-        printf("--random-seed ");
+        printf(" --random-seed ");
         for (i = 0; i < RANDOM_SEED_LEN; i++)
         {
                 printf("%02X", info->random_seed[i]);
@@ -120,7 +120,7 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
     }
     if (info->specific_options & CHK_GET_PUZZLE_RANDOM_SEED_FROM_FILE)
     {
-        printf("--random-seed-file \"%s\" ", info->random_seed_path);
+        printf(" --random-seed-file \"%s\" ", info->random_seed_path);
     }
 }
 

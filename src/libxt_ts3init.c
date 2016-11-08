@@ -83,15 +83,15 @@ static void ts3init_save(const void *ip, const struct xt_entry_match *match)
     const struct xt_ts3init_mtinfo *info = (const void *)match->data;
     if (info->specific_options & CHK_TS3INIT_CLIENT)
     {
-        printf("--client ");
+        printf(" --client ");
     }
     if (info->specific_options & CHK_TS3INIT_SERVER)
     {
-        printf("--server ");
+        printf(" --server ");
     }
     if (info->specific_options & CHK_TS3INIT_COMMAND)
     {
-        printf("--command %i ", (int)info->command);
+        printf(" --command %i ", (int)info->command);
     }
 }
 
