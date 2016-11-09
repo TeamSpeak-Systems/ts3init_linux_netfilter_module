@@ -29,7 +29,7 @@
 
 /* Magic number of a TS3INIT packet. */
 static const struct ts3_init_header_tag ts3init_header_tag_signature =
-    { .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} };
+    {{ .tag8 = {'T', 'S', '3', 'I', 'N', 'I', 'T', '1'} }};
 
 
 struct ts3_init_checked_client_header_data
