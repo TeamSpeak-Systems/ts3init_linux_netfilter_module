@@ -11,9 +11,10 @@
  *    under the terms of the GNU General Public License; either version 2
  *    or 3 of the License, as published by the Free Software Foundation.
  */
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/time.h>
-#include <linux/crypto.h>
+#include <crypto/hash.h>
 #include <linux/err.h>
 #include <linux/scatterlist.h>
 #include <linux/netfilter/x_tables.h>
@@ -24,48 +25,70 @@
 #include "ts3init_random_seed.h"
 #include "ts3init_cookie.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#define SHASH_DESC_ON_STACK(shash, ctx)                           \
+        char __##shash##_desc[sizeof(struct shash_desc) +         \
+                crypto_shash_descsize(ctx)] CRYPTO_MINALIGN_ATTR; \
+        struct shash_desc *shash = (struct shash_desc *)__##shash##_desc
+#endif
+
 static void check_update_seed_cache(time_t time, __u8 index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* random_seed)
 {
-    struct hash_desc desc;
-    struct scatterlist sg[2];
     int ret;
     __le32 seed_hash_time;
+    struct crypto_shash *tfm;
 
     if (time == cache->time[index]) return;
 
     /* We need to update the cache. */
     /* seed = sha512(random_seed[RANDOM_SEED_LEN] + __le32 time) */
     seed_hash_time = cpu_to_le32( (__u32)time);
-    sg_init_table(sg, ARRAY_SIZE(sg));
-    sg_set_buf(&sg[0], random_seed, RANDOM_SEED_LEN);
-    sg_set_buf(&sg[1], &seed_hash_time, 4);
 
-    desc.tfm = crypto_alloc_hash("sha512", 0, 0);
-    desc.flags = 0;
-
-    if (IS_ERR(desc.tfm))
+    tfm = crypto_alloc_shash("sha512", 0, 0);
+    if (IS_ERR(tfm))
     {
         printk(KERN_ERR KBUILD_MODNAME ": could not alloc sha512\n");
-        return;
     }
-
-    ret = crypto_hash_init(&desc);
-    if (ret != 0)
+    else 
     {
-        printk(KERN_ERR KBUILD_MODNAME ": could not initalize sha512\n");
-        return;
+        SHASH_DESC_ON_STACK(shash, tfm);
+        shash->tfm = tfm;
+        shash->flags = 0;
+
+        ret = crypto_shash_init(shash);
+        if (ret != 0)
+        {
+            printk(KERN_ERR KBUILD_MODNAME ": could not initalize sha512\n");
+            crypto_free_shash(tfm);
+            return;
+        }
+
+        ret = crypto_shash_update(shash, random_seed, RANDOM_SEED_LEN);
+        if (ret != 0)
+        {
+            printk(KERN_ERR KBUILD_MODNAME ": could not update sha512\n");
+            crypto_free_shash(tfm);
+            return;
+        }
+
+        ret = crypto_shash_update(shash, (u8*)&seed_hash_time, 4);
+        if (ret != 0)
+        {
+            printk(KERN_ERR KBUILD_MODNAME ": could not update sha512\n");
+            crypto_free_shash(tfm);
+            return;
+        }
+
+        ret = crypto_shash_final(shash, cache->seed8 + index * SHA512_SIZE);
+        if (ret != 0)
+        {
+            printk(KERN_ERR KBUILD_MODNAME ": could not final sha512\n");
+        }
     }
 
-    ret = crypto_hash_digest(&desc, sg, 64, cache->seed8 + index * SHA512_SIZE);
-    if (ret != 0)
-    {
-        printk(KERN_ERR KBUILD_MODNAME ": could not digest sha512\n");
-        return;
-    }
-
-    crypto_free_hash(desc.tfm);
+    crypto_free_shash(tfm);
 }
 
 __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
