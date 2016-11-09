@@ -98,7 +98,7 @@ static void ts3init_save(const void *ip, const struct xt_entry_match *match)
 static void ts3init_print(const void *ip, const struct xt_entry_match *match,
                             int numeric)
 {
-    printf(" -m ts3init ");
+    printf(" -m ts3init");
     ts3init_save(ip, match);
 }
 

@@ -111,7 +111,7 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
     }
     if (info->specific_options & CHK_GET_PUZZLE_RANDOM_SEED_FROM_ARGUMENT)
     {
-        printf(" --random-seed");
+        printf(" --random-seed ");
         for (i = 0; i < RANDOM_SEED_LEN; i++)
         {
                 printf("%02X", info->random_seed[i]);
@@ -126,7 +126,7 @@ static void ts3init_get_puzzle_save(const void *ip, const struct xt_entry_match 
 static void ts3init_get_puzzle_print(const void *ip, const struct xt_entry_match *match,
                             int numeric)
 {
-    printf(" -m ts3init_get_puzzle ");
+    printf(" -m ts3init_get_puzzle");
     ts3init_get_puzzle_save(ip, match);
 }
 
