@@ -79,18 +79,18 @@ static void ts3init_get_cookie_save(const void *ip, const struct xt_entry_match 
     const struct xt_ts3init_get_cookie_mtinfo *info = (const void *)match->data;
     if (info->common_options & CHK_COMMON_CLIENT_VERSION)
     {
-        printf("--min-client %u ", info->min_client_version + CLIENT_VERSION_OFFSET);
+        printf(" --min-client %u", info->min_client_version + CLIENT_VERSION_OFFSET);
     }
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
-        printf("--check-time %u ", info->max_utc_offset);
+        printf(" --check-time %u", info->max_utc_offset);
     }
 }
 
 static void ts3init_get_cookie_print(const void *ip, const struct xt_entry_match *match,
                             int numeric)
 {
-    printf(" -m ts3init_get_cookie ");
+    printf(" -m ts3init_get_cookie");
     ts3init_get_cookie_save(ip, match);
 }
 
@@ -129,4 +129,3 @@ static __attribute__((constructor)) void ts3init_mt_ldr(void)
 {
     xtables_register_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
 }
-
