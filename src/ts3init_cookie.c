@@ -91,8 +91,8 @@ static void check_update_seed_cache(time_t time, __u8 index,
         }
 
         crypto_free_shash(tfm);
+        cache->time[index] = time;
     }
-
 }
 
 __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
