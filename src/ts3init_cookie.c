@@ -11,6 +11,7 @@
  *    under the terms of the GNU General Public License; either version 2
  *    or 3 of the License, as published by the Free Software Foundation.
  */
+#include <linux/init.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/time.h>
@@ -39,6 +40,8 @@
         struct shash_desc *shash = (struct shash_desc *)__##shash##_desc
 #endif
 
+static struct crypto_shash *sha512_tfm;
+
 
 static void check_update_seed_cache(time_t time, __u8 index, 
                 struct xt_ts3init_cookie_cache* cache,
@@ -46,30 +49,21 @@ static void check_update_seed_cache(time_t time, __u8 index,
 {
     int ret;
     __le32 seed_hash_time;
-    struct crypto_shash *tfm;
 
     if (time == cache->time[index]) return;
 
     /* We need to update the cache. */
     /* seed = sha512(random_seed[RANDOM_SEED_LEN] + __le32 time) */
     seed_hash_time = cpu_to_le32( (__u32)time);
-
-    tfm = crypto_alloc_shash(TS3_SHA_512_NAME, 0, 0);
-    if (IS_ERR(tfm))
     {
-        printk(KERN_ERR KBUILD_MODNAME ": could not alloc sha512\n");
-    }
-    else 
-    {
-        SHASH_DESC_ON_STACK(shash, tfm);
-        shash->tfm = tfm;
+        SHASH_DESC_ON_STACK(shash, sha512_tfm);
+        shash->tfm = sha512_tfm;
         shash->flags = 0;
 
         ret = crypto_shash_init(shash);
         if (ret != 0)
         {
             printk(KERN_ERR KBUILD_MODNAME ": could not initalize sha512\n");
-            crypto_free_shash(tfm);
             return;
         }
 
@@ -77,7 +71,6 @@ static void check_update_seed_cache(time_t time, __u8 index,
         if (ret != 0)
         {
             printk(KERN_ERR KBUILD_MODNAME ": could not update sha512\n");
-            crypto_free_shash(tfm);
             return;
         }
 
@@ -86,11 +79,9 @@ static void check_update_seed_cache(time_t time, __u8 index,
         if (ret != 0)
         {
             printk(KERN_ERR KBUILD_MODNAME ": could not finup sha512\n");
-            crypto_free_shash(tfm);
             return;
         }
 
-        crypto_free_shash(tfm);
         cache->time[index] = time;
     }
 }
@@ -106,7 +97,7 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
     time_t packet_cache_time;
 
     if (packet_index >= 8) return NULL;
-    
+
     current_cache_index = (current_time % 8) / 4;
     packet_cache_index = packet_index / 4;
 
@@ -147,5 +138,21 @@ int ts3init_calculate_cookie_ipv4(const struct iphdr *ip, const struct udphdr *u
     *out = ts3init_siphash_finalize(&hash_state);
 
     return 0;
+}
+
+int __init ts3init_cookie_init(void)
+{
+    sha512_tfm = crypto_alloc_shash(TS3_SHA_512_NAME, 0, 0);
+    if (IS_ERR(sha512_tfm))
+    {
+        printk(KERN_ERR KBUILD_MODNAME ": could not alloc sha512\n");
+        return (int) PTR_ERR(sha512_tfm);
+    }
+    return 0;
+}
+
+void ts3init_cookie_exit(void)
+{
+    crypto_free_shash(sha512_tfm);
 }
 

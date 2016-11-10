@@ -14,6 +14,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/init.h>
 #include <linux/skbuff.h>
 #include <linux/udp.h>
 #include <linux/netfilter/x_tables.h>
@@ -525,7 +526,7 @@ static struct xt_target ts3init_tg_reg[] __read_mostly = {
     },
 };
 
-int ts3init_target_init(void)
+int __init ts3init_target_init(void)
 {
     return xt_register_targets(ts3init_tg_reg, ARRAY_SIZE(ts3init_tg_reg));
 }

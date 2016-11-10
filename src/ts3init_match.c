@@ -14,6 +14,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/init.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/skbuff.h>
 #include <linux/ip.h>
@@ -440,7 +441,7 @@ static struct xt_match ts3init_mt_reg[] __read_mostly =
     },
 };
 
-int ts3init_match_init(void)
+int __init ts3init_match_init(void)
 {
     return xt_register_matches(ts3init_mt_reg, ARRAY_SIZE(ts3init_mt_reg));
 }

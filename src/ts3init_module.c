@@ -19,12 +19,15 @@
 
 /* defined in ts3init_match.c */
 int ts3init_match_init(void) __init;
-void ts3init_match_exit(void) __exit;
+void ts3init_match_exit(void);
 
 /* defined in ts3init_target.c */
 int ts3init_target_init(void) __init;
-void ts3init_target_exit(void) __exit;
+void ts3init_target_exit(void);
 
+/* defined in ts3init_cookie.c */
+int ts3init_cookie_init(void) __init;
+void ts3init_cookie_exit(void);
 
 MODULE_AUTHOR("Niels Werensteijn <niels.werensteijn@teamspeak.com>");
 MODULE_DESCRIPTION("A module to aid in ts3 spoof protection");
@@ -35,21 +38,34 @@ MODULE_ALIAS("ip6t_ts3init");
 static int __init ts3init_init(void)
 {
     int error;
+
+    error = ts3init_cookie_init();
+    if (error)
+        goto out1;
+
     error = ts3init_match_init();
     if (error)
-        return error;
+        goto out2;
 
     error = ts3init_target_init();
     if (error)
-        ts3init_match_exit();
+        goto out3;
 
+    return error;
+
+out3:
+    ts3init_match_exit();
+out2:
+    ts3init_cookie_exit();
+out1:
     return error;
 }
 
 static void __exit ts3init_exit(void)
 {
-    ts3init_match_exit();
     ts3init_target_exit();
+    ts3init_match_exit();
+    ts3init_cookie_exit();
 }
 
 module_init(ts3init_init);
