@@ -1,7 +1,8 @@
 #ifndef _TS3INIT_COOKIE_H
 #define _TS3INIT_COOKIE_H
 
-enum {
+enum
+{
     SHA512_SIZE = 64,
     SIP_KEY_SIZE = 16
 };
