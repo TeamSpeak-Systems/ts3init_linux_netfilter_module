@@ -18,12 +18,12 @@
 #include <linux/netfilter/x_tables.h>
 
 /* defined in ts3init_match.c */
-int __init ts3init_match_init(void);
-void __exit ts3init_match_exit(void);
+int ts3init_match_init(void) __init;
+void ts3init_match_exit(void) __exit;
 
 /* defined in ts3init_target.c */
-int __init ts3init_target_init(void);
-void __exit ts3init_target_exit(void);
+int ts3init_target_init(void) __init;
+void ts3init_target_exit(void) __exit;
 
 
 MODULE_AUTHOR("Niels Werensteijn <niels.werensteijn@teamspeak.com>");
