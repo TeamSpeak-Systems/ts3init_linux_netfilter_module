@@ -25,12 +25,20 @@
 #include "ts3init_random_seed.h"
 #include "ts3init_cookie.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+#define TS3_SHA_512_NAME "sha512"
+#else
+#include <crypto/hash_info.h>
+#define TS3_SHA_512_NAME hash_algo_name[HASH_ALGO_SHA512]
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 #define SHASH_DESC_ON_STACK(shash, ctx)                           \
         char __##shash##_desc[sizeof(struct shash_desc) +         \
                 crypto_shash_descsize(ctx)] CRYPTO_MINALIGN_ATTR; \
         struct shash_desc *shash = (struct shash_desc *)__##shash##_desc
 #endif
+
 
 static void check_update_seed_cache(time_t time, __u8 index, 
                 struct xt_ts3init_cookie_cache* cache,
@@ -46,7 +54,7 @@ static void check_update_seed_cache(time_t time, __u8 index,
     /* seed = sha512(random_seed[RANDOM_SEED_LEN] + __le32 time) */
     seed_hash_time = cpu_to_le32( (__u32)time);
 
-    tfm = crypto_alloc_shash("sha512", 0, 0);
+    tfm = crypto_alloc_shash(TS3_SHA_512_NAME, 0, 0);
     if (IS_ERR(tfm))
     {
         printk(KERN_ERR KBUILD_MODNAME ": could not alloc sha512\n");
@@ -73,22 +81,18 @@ static void check_update_seed_cache(time_t time, __u8 index,
             return;
         }
 
-        ret = crypto_shash_update(shash, (u8*)&seed_hash_time, 4);
+        ret = crypto_shash_finup(shash, (u8*)&seed_hash_time, 4,
+            cache->seed8 + index * SHA512_SIZE);            
         if (ret != 0)
         {
-            printk(KERN_ERR KBUILD_MODNAME ": could not update sha512\n");
+            printk(KERN_ERR KBUILD_MODNAME ": could not finup sha512\n");
             crypto_free_shash(tfm);
             return;
         }
 
-        ret = crypto_shash_final(shash, cache->seed8 + index * SHA512_SIZE);
-        if (ret != 0)
-        {
-            printk(KERN_ERR KBUILD_MODNAME ": could not final sha512\n");
-        }
+        crypto_free_shash(tfm);
     }
 
-    crypto_free_shash(tfm);
 }
 
 __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
