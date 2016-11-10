@@ -88,7 +88,7 @@ bool ts3init_get_cookie_seed_for_packet_index(u8 packet_index, const u8* random_
         (*cookie)[1] = result[1];
     }
     put_cpu_var(ts3init_cache);
-    return result;
+    return result != NULL;
 }
 
 bool ts3init_get_current_cookie_seed(const u8* random_seed, u64 (*cookie)[2], u8 *packet_index)
@@ -116,5 +116,5 @@ bool ts3init_get_current_cookie_seed(const u8* random_seed, u64 (*cookie)[2], u8
         (*cookie)[1] = result[1];
     }
     put_cpu_var(ts3init_cache);
-    return result;
+    return result != NULL;
 }
