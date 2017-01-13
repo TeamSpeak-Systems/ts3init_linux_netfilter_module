@@ -73,7 +73,6 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     udp->len    = htons(sizeof(*udp) + payload_size);
 
     memcpy(skb_put(skb, payload_size), payload, payload_size);
-    ip->payload_len = htons(skb->len);
 
     udp->check = 0;
     udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
@@ -135,8 +134,8 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     ip->version  = oldip->version;
     ip->ihl      = sizeof(*ip) / 4;
     ip->tos      = oldip->tos;
-    ip->id       = oldip->id;
-    ip->frag_off = 0;
+    ip->id       = 0;
+    ip->frag_off = htons(IP_DF);
     ip->protocol = oldip->protocol;
     ip->check    = 0;
     ip->saddr    = oldip->daddr;
@@ -149,7 +148,6 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     udp->len    = htons(sizeof(*udp) + payload_size);
 
     memcpy(skb_put(skb, payload_size), payload, payload_size);
-    ip->tot_len = htons(skb->len);
 
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
@@ -403,11 +401,8 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     struct iphdr *ip;
     struct udphdr *udp, udp_buf;
     u8 *payload, payload_buf[TS3INIT_HEADER_CLIENT_LENGTH + 16];
-
-    if (skb_put_padto(skb, sizeof(*ip) + sizeof(*udp) + sizeof(payload_buf)))
-        return NF_STOLEN;
-    if (!skb_make_writable(skb, skb->len))
-        return NF_DROP;
+    int delta;
+    int new_udp_len;
 
     ip  = ip_hdr(skb);
     udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
@@ -416,16 +411,30 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     if (ip->frag_off & htons(IP_OFFSET))
         return NF_DROP;
 
+    new_udp_len = sizeof(*udp) + sizeof(payload_buf);
+    delta = new_udp_len - ntohs(udp->len);
+    if (delta < 0)
+    {
+        skb_trim(skb, skb->len + delta);
+    }
+    else
+    {
+        if (skb_put_padto(skb, skb->len + delta))
+            return NF_STOLEN;
+    }
+    if (!skb_make_writable(skb, skb->len))
+        return NF_DROP;
+
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
     ts3init_fill_get_cookie_payload(payload);
 
-    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
+    udp->len = htons(new_udp_len);
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
-                                   ntohs(udp->len), IPPROTO_UDP, 
-                                   csum_partial(udp, ntohs(udp->len), 0));
-    ip->tot_len = htons(skb->len);
-    skb->ip_summed = CHECKSUM_NONE;
+                                   new_udp_len, IPPROTO_UDP, 
+                                   csum_partial(udp, new_udp_len, 0));
+    ip->tot_len = htons( ntohs(ip->tot_len) + delta );
+    ip_send_check(ip);
 
     if (skb->len > dst_mtu(skb_dst(skb)))
         return NF_DROP;
@@ -443,27 +452,38 @@ ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
     struct ipv6hdr *ip;
     struct udphdr *udp, udp_buf;
     u8 *payload, payload_buf[TS3INIT_HEADER_CLIENT_LENGTH + 16];
-
-    if (skb_put_padto(skb, sizeof(*ip) + sizeof(*udp) + sizeof(payload_buf)))
-        return NF_STOLEN;
-    if (!skb_make_writable(skb, skb->len))
-        return NF_DROP;
+    int delta;
+    int new_udp_len;
 
     ip  = ipv6_hdr(skb);
     udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
     if (udp == NULL)
         return NF_DROP;
 
+    new_udp_len = sizeof(*udp) + sizeof(payload_buf);
+    delta = new_udp_len - ntohs(udp->len);
+
+    if (delta < 0)
+    {
+        skb_trim(skb, skb->len + delta);
+    }
+    else
+    {
+        if (skb_put_padto(skb, skb->len + delta))
+            return NF_STOLEN;
+    }
+    if (!skb_make_writable(skb, skb->len))
+        return NF_DROP;
+
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
     ts3init_fill_get_cookie_payload(payload);
 
-    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
+    udp->len = htons(new_udp_len);
     udp->check = 0;
     udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
-                                 ntohs(udp->len), IPPROTO_UDP, 
-                                 csum_partial(udp, ntohs(udp->len), 0));
-    ip->payload_len = htons(skb->len);
-    skb->ip_summed = CHECKSUM_NONE;
+                                 new_udp_len, IPPROTO_UDP, 
+                                 csum_partial(udp, new_udp_len, 0));
+    ip->payload_len = htons( ntohs(ip->payload_len) + delta );
 
     if (skb->len > dst_mtu(skb_dst(skb)))
         return NF_DROP;
