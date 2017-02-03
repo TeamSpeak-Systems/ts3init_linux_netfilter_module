@@ -26,7 +26,7 @@
 #include "ts3init_random_seed.h"
 #include "ts3init_cookie.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+#ifndef HAS_CRYPTO_HASH_INFO
 #define TS3_SHA_512_NAME "sha512"
 #else
 #include <crypto/hash_info.h>
