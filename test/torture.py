@@ -30,6 +30,8 @@ parser.add_argument('--spoof',  action='store_const', const=True, default=False,
 parser.add_argument('--version',  type=int, default=1459504131, help='version number send to the server')
 args = parser.parse_args()
 
+CLIENT_VERSION_OFFSET = 1356998400
+
 def generateSpoofedHeader(dest_address, dest_port, payload):
     # checksum functions needed for calculation checksum
     def checksum(msg):
@@ -74,7 +76,7 @@ def generatePayload(version):
         101,         # Packet ID
         0,           # Client ID
         0x88,        # Flags,
-        version,     # Version
+        version - CLIENT_VERSION_OFFSET,     # Version
         0,           # Command
         int(time()), # Timestamp
         number);     # Random-Sequence
