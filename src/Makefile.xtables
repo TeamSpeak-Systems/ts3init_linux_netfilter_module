@@ -6,7 +6,11 @@ clean:
 	rm -f $(LIBS)
 
 install:
-	install -g root -o root -m 644 $(LIBS) /lib/xtables/
+	if [ -d /usr/lib/x86_64-linux-gnu/xtables ]; then \
+      install -g root -o root -m 644 $(LIBS) /usr/lib/x86_64-linux-gnu/xtables; \
+    else \
+      install -g root -o root -m 644 $(LIBS) /lib/xtables/ ; \
+    fi
 
 lib%.so: lib%.o
 	gcc -shared -fPIC -o $@ $^;
