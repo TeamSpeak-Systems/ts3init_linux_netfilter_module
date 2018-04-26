@@ -90,7 +90,7 @@ static inline void proc_remove(struct proc_dir_entry *de)
 static inline struct net *par_net(const struct xt_action_param *par)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
-    return par->net;
+    return xt_net(par);
 #else
     return dev_net((par->in != NULL) ? par->in : par->out);
 #endif
