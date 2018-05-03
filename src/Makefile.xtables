@@ -13,8 +13,8 @@ install:
 	elif [ -d /usr/lib/i386-linux-gnu/xtables ]; then \
 	  install -g root -o root -m 644 $(LIBS) /usr/lib/i386-linux-gnu/xtables; \
 	else \
-	  echo "Unable to find xtables modules path!"
-	  exit 1
+	  echo "Unable to find xtables modules path!"; \
+	  exit 1; \
 	fi
 
 lib%.so: lib%.o
