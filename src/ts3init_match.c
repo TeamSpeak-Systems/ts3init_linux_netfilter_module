@@ -13,6 +13,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/netfilter/x_tables.h>
@@ -141,7 +142,11 @@ static inline __u8* get_payload(const struct sk_buff *skb, const struct xt_actio
 static int calculate_cookie(const struct sk_buff *skb, const struct xt_action_param *par, 
                        struct udphdr *udp, __u64 k0, __u64 k1, __u64* out)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+    switch (xt_family(par))
+#else
     switch (par->family)
+#endif
     {
     case NFPROTO_IPV4:
         {
