@@ -47,7 +47,12 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     struct udphdr *udp;
     struct flowi6 fl;
     struct dst_entry *dst = NULL;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
     struct net *net = dev_net((xt_in(par) != NULL) ? xt_in(par) : xt_out(par));
+#else
+    struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
+#endif
 
     skb = alloc_skb(LL_MAX_HEADER + sizeof(*ip) +
              sizeof(*udp) + payload_size, GFP_ATOMIC);
