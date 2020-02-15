@@ -34,6 +34,19 @@
 #include "ts3init_header.h"
 #include "ts3init_cache.h"
 
+/*
+Reset any conntrack connection (removing from db)
+*/
+static void ts3ct_reset(struct sk_buff *skb){
+    struct nf_conn *ct;
+    enum ip_conntrack_info ctinfo;
+
+    ct = nf_ct_get(skb, &ctinfo);
+    if (ctinfo != IP_CT_UNTRACKED) {
+        nf_ct_kill(skb->delete);
+        nf_reset_ct(skb);
+    }
+}
 
 /*
  * Send a reply back to the client
@@ -106,7 +119,8 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         goto free_nskb;
 
-    nf_ct_attach(skb, oldskb);
+    ts3ct_reset(oldskb);
+    //nf_ct_attach(skb, oldskb);
     ip6_local_out(par_net(par), skb->sk, skb);
     return true;
 
@@ -173,7 +187,8 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         goto free_nskb;
 
-    nf_ct_attach(skb, oldskb);
+    ts3ct_reset(oldskb);
+    //nf_ct_attach(skb, oldskb);
     ip_local_out(par_net(par), skb->sk, skb);
     return true;
 
