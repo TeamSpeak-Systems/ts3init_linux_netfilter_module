@@ -32,6 +32,15 @@ struct ts3init_cache_t
 
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
+static inline void do_gettimeofday(struct timeval *tv)	
+{	
+	struct timespec64 now;	
+
+	ktime_get_real_ts64(&now);	
+	tv->tv_sec = now.tv_sec;	
+	tv->tv_usec = now.tv_nsec/1000;	
+}
+
 static inline void update_cache_time(unsigned long jifs,
     struct ts3init_cache_t* cache)
 {

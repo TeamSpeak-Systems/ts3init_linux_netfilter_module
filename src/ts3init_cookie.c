@@ -58,7 +58,6 @@ static void check_update_seed_cache(time_t time, __u8 index,
     {
         SHASH_DESC_ON_STACK(shash, sha512_tfm);
         shash->tfm = sha512_tfm;
-        shash->flags = 0;
 
         ret = crypto_shash_init(shash);
         if (ret != 0)

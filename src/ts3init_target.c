@@ -428,7 +428,7 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
         if (skb_put_padto(skb, skb->len + delta))
             return NF_STOLEN;
     }
-    if (!skb_make_writable(skb, skb->len))
+    if (!skb_ensure_writable(skb, skb->len))
         return NF_DROP;
 
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
@@ -478,7 +478,7 @@ ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
         if (skb_put_padto(skb, skb->len + delta))
             return NF_STOLEN;
     }
-    if (!skb_make_writable(skb, skb->len))
+    if (!skb_ensure_writable(skb, skb->len))
         return NF_DROP;
 
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
