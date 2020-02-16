@@ -11,4 +11,5 @@ clean:
 install: all
 	$(MAKE) -C src modules_install;
 	$(MAKE) -C src -f Makefile.xtables install;
+	depmod -a
 
