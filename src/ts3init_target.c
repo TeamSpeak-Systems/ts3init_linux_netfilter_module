@@ -42,7 +42,7 @@ static void ts3ct_reset(struct sk_buff *skb){
     enum ip_conntrack_info ctinfo;
 
     ct = nf_ct_get(skb, &ctinfo);
-    if (ctinfo != IP_CT_UNTRACKED) {
+    if (ct && ctinfo != IP_CT_UNTRACKED) {
         nf_ct_kill(ct);
         nf_reset_ct(skb);
     }
@@ -120,6 +120,7 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
         goto free_nskb;
 
     ts3ct_reset(oldskb);
+	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
     //nf_ct_attach(skb, oldskb);
     ip6_local_out(par_net(par), skb->sk, skb);
     return true;
@@ -188,6 +189,7 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
         goto free_nskb;
 
     ts3ct_reset(oldskb);
+	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
     //nf_ct_attach(skb, oldskb);
     ip_local_out(par_net(par), skb->sk, skb);
     return true;
