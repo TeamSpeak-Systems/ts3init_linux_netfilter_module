@@ -43,8 +43,8 @@ static void ts3ct_reset(struct sk_buff *skb){
 
     ct = nf_ct_get(skb, &ctinfo);
     if (ct && ctinfo != IP_CT_UNTRACKED) {
-        nf_ct_kill(ct);
         nf_reset_ct(skb);
+        nf_ct_kill(ct);
     }
 }
 
