@@ -460,7 +460,7 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         return NF_DROP;
 
-    return NF_ACCEPT;
+    return NF_CONTINUE;
 }
 
 /*
@@ -509,7 +509,7 @@ ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         return NF_DROP;
 
-    return NF_ACCEPT;
+    return NF_CONTINUE;
 }
 
 static struct xt_target ts3init_tg_reg[] __read_mostly = {
