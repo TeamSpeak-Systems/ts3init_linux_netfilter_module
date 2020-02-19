@@ -92,7 +92,7 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     fl.fl6_dport = udp->dest;
     security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi(&fl));
     dst = ip6_route_output(net, NULL, &fl);
-    if (dst == NULL || dst->error != 0) {
+    if (unlikely(dst == NULL || dst->error != 0)) {
         dst_release(dst);
         goto free_nskb;
     }
@@ -102,8 +102,9 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     skb->ip_summed = CHECKSUM_NONE;
 
     /* "Never happens" (?) */
-    if (skb->len > dst_mtu(skb_dst(skb)))
+    if (unlikely(skb->len > dst_mtu(skb_dst(skb)))) {
         goto free_nskb;
+    }
 
 	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
     //nf_ct_attach(skb, oldskb);
@@ -173,15 +174,17 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     skb_dst_set_noref(skb, &dste);
     skb->dev = oldskb->dev;
 
-    if (ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)
+    if (unlikely(ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)){
         goto free_nskb;
+    }
 
     ip->ttl = ip4_dst_hoplimit(skb_dst(skb));
     skb->ip_summed = CHECKSUM_NONE;
 
     /* "Never happens" (?) */
-    if (skb->len > dst_mtu(skb_dst(skb)))
+    if (unlikely(skb->len > dst_mtu(skb_dst(skb)))){
         goto free_nskb;
+    }
 
 	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
     ip_local_out(par_net(par), skb->sk, skb);
