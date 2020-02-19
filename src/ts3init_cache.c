@@ -32,26 +32,16 @@ struct ts3init_cache_t
 
 DEFINE_PER_CPU(struct ts3init_cache_t, ts3init_cache);
 
-static inline void do_gettimeofday(struct timeval *tv)	
-{	
-	struct timespec64 now;	
-
-	ktime_get_real_ts64(&now);	
-	tv->tv_sec = now.tv_sec;	
-	tv->tv_usec = now.tv_nsec/1000;	
-}
-
 static inline void update_cache_time(unsigned long jifs,
     struct ts3init_cache_t* cache)
 {
-    if (((long)jifs - (long)cache->saved_jiffies) >= HZ)
-    {
+    struct timespec64 now;
+    if (unlikely(((long)jifs - (long)cache->saved_jiffies) >= HZ)){
         /* it's been 1 second sinds last time update.
          * Get the new unix time and cache it*/
-       struct timeval tv;
        cache->saved_jiffies = jifs;
-       do_gettimeofday(&tv);
-       cache->unix_time = tv.tv_sec;
+       ktime_get_real_ts64(&now);
+       cache->unix_time = now.tv_sec;
    }
 }
 

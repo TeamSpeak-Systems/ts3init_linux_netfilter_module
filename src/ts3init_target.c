@@ -35,21 +35,6 @@
 #include "ts3init_cache.h"
 
 /*
-Reset any conntrack connection (removing from db)
-*/
-static void ts3ct_reset(struct sk_buff *skb){
-    struct nf_conn *ct;
-    enum ip_conntrack_info ctinfo;
-
-    ct = nf_ct_get(skb, &ctinfo);
-    if (ct && ctinfo != IP_CT_UNTRACKED) {
-        nf_reset_ct(skb);
-	    nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
-        nf_ct_kill(ct);
-    }
-}
-
-/*
  * Send a reply back to the client
  */
 static bool
@@ -120,7 +105,6 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         goto free_nskb;
 
-    ts3ct_reset(oldskb);
 	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
     //nf_ct_attach(skb, oldskb);
     ip6_local_out(par_net(par), skb->sk, skb);
@@ -129,6 +113,13 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
  free_nskb:
     kfree_skb(skb);
     return false;
+}
+
+static void dst_init2(struct dst_entry *dst, struct net_device *dev)
+{
+       dst->dev = dev;
+       dst->flags = DST_NOCOUNT;
+       dst->__use = 1;
 }
 
 /*
@@ -177,7 +168,9 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
                     csum_partial(udp, ntohs(udp->len), 0));
 
     /* ip_route_me_harder expects the skb's dst to be set */
-    skb_dst_set(skb, dst_clone(skb_dst(oldskb)));
+    dst_init2(&dste, oldskb->dev);
+    skb_dst_set_noref(skb, &dste);
+    skb->dev = oldskb->dev;
 
     if (ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)
         goto free_nskb;
@@ -189,9 +182,7 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     if (skb->len > dst_mtu(skb_dst(skb)))
         goto free_nskb;
 
-    ts3ct_reset(oldskb);
 	nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
-    //nf_ct_attach(skb, oldskb);
     ip_local_out(par_net(par), skb->sk, skb);
     return true;
 
@@ -218,7 +209,8 @@ ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
         return NF_DROP;
 
     ts3init_send_ipv4_reply(skb, par, ip, udp, ts3init_reset_packet, sizeof(ts3init_reset_packet));
-    return NF_DROP;
+    consume_skb(skb);
+    return NF_STOLEN;
 }
 
 /* 
@@ -236,7 +228,8 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
         return NF_DROP;
 
     ts3init_send_ipv6_reply(skb, par, ip, udp, ts3init_reset_packet, sizeof(ts3init_reset_packet));
-    return NF_DROP;
+    consume_skb(skb);
+    return NF_STOLEN;
 }
 
 /* The header replied by TS3INIT_SET_COOKIE. */
@@ -344,6 +337,8 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
         ts3init_fill_set_cookie_payload(skb, par, cookie, packet_index, payload))
     {
         ts3init_send_ipv4_reply(skb, par, ip, udp, payload, sizeof(payload));
+        consume_skb(skb);
+        return NF_STOLEN;
     }
     return NF_DROP;
 }
@@ -370,6 +365,8 @@ ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
         ts3init_fill_set_cookie_payload(skb, par, cookie, packet_index, payload))
     {
         ts3init_send_ipv6_reply(skb, par, ip, udp, payload, sizeof(payload));
+        consume_skb(skb);
+        return NF_STOLEN;
     }
     return NF_DROP;
 }
@@ -425,43 +422,39 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     struct iphdr *ip;
     struct udphdr *udp, udp_buf;
     u8 *payload, payload_buf[TS3INIT_HEADER_CLIENT_LENGTH + 16];
-    int delta;
     int new_udp_len;
 
     ip  = ip_hdr(skb);
     udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
-    if (udp == NULL)
-        return NF_DROP;
-    if (ip->frag_off & htons(IP_OFFSET))
+    if (unlikely(udp == NULL || ip->frag_off & htons(IP_OFFSET)))
         return NF_DROP;
 
-    new_udp_len = sizeof(*udp) + sizeof(payload_buf);
-    delta = new_udp_len - ntohs(udp->len);
-    if (delta < 0)
+    new_udp_len = par->thoff + sizeof(*udp) + sizeof(payload_buf);
+    if (!skb_ensure_writable(skb, new_udp_len))
+        return NF_DROP;
+    if (likely(new_udp_len < skb->len))
     {
-        skb_trim(skb, skb->len + delta);
+        skb_trim(skb, new_udp_len);
     }
-    else
+    else if(unlikely(skb->len > new_udp_len))
     {
-        if (skb_put_padto(skb, skb->len + delta))
+        if (skb_put_padto(skb, new_udp_len))
             return NF_STOLEN;
     }
-    if (!skb_ensure_writable(skb, skb->len))
-        return NF_DROP;
 
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
     ts3init_fill_get_cookie_payload(payload);
 
-    udp->len = htons(new_udp_len);
+    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
-                                   new_udp_len, IPPROTO_UDP, 
+                                    sizeof(*udp) + sizeof(payload_buf), IPPROTO_UDP, 
                                    csum_partial(udp, new_udp_len, 0));
-    ip->tot_len = htons( ntohs(ip->tot_len) + delta );
+    ip->tot_len = htons( new_udp_len );
     ip_send_check(ip);
 
-    if (skb->len > dst_mtu(skb_dst(skb)))
-        return NF_DROP;
+    //if (skb->len > dst_mtu(skb_dst(skb)))
+    //    return NF_DROP;
 
     return XT_CONTINUE;
 }
@@ -481,36 +474,34 @@ ts3init_get_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
 
     ip  = ipv6_hdr(skb);
     udp = skb_header_pointer(skb, par->thoff, sizeof(udp_buf), &udp_buf);
-    if (udp == NULL)
+    if (unlikely(udp == NULL))
         return NF_DROP;
 
-    new_udp_len = sizeof(*udp) + sizeof(payload_buf);
-    delta = new_udp_len - ntohs(udp->len);
-
-    if (delta < 0)
+    new_udp_len = par->thoff + sizeof(*udp) + sizeof(payload_buf);
+    if (!skb_ensure_writable(skb, new_udp_len))
+        return NF_DROP;
+    if (likely(new_udp_len < skb->len))
     {
-        skb_trim(skb, skb->len + delta);
+        skb_trim(skb, new_udp_len);
     }
-    else
+    else if(unlikely(skb->len > new_udp_len))
     {
-        if (skb_put_padto(skb, skb->len + delta))
+        if (skb_put_padto(skb, new_udp_len))
             return NF_STOLEN;
     }
-    if (!skb_ensure_writable(skb, skb->len))
-        return NF_DROP;
 
     payload = skb_header_pointer(skb, par->thoff + sizeof(*udp), sizeof(payload_buf), payload_buf);
     ts3init_fill_get_cookie_payload(payload);
 
-    udp->len = htons(new_udp_len);
+    udp->len = htons(sizeof(*udp) + sizeof(payload_buf));
     udp->check = 0;
     udp->check = csum_ipv6_magic(&ip->saddr, &ip->daddr,
-                                 new_udp_len, IPPROTO_UDP, 
+                                 sizeof(*udp) + sizeof(payload_buf), IPPROTO_UDP, 
                                  csum_partial(udp, new_udp_len, 0));
-    ip->payload_len = htons( ntohs(ip->payload_len) + delta );
+    ip->payload_len = htons( new_udp_len );
 
-    if (skb->len > dst_mtu(skb_dst(skb)))
-        return NF_DROP;
+    //if (skb->len > dst_mtu(skb_dst(skb)))
+    //    return NF_DROP;
 
     return XT_CONTINUE;
 }
