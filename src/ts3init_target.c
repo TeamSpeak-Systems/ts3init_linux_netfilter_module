@@ -457,7 +457,7 @@ ts3init_get_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
                                     sizeof(*udp) + sizeof(payload_buf), IPPROTO_UDP, 
-                                   csum_partial(udp, sizeof(*udp) + sizeof(payload_buf, 0));
+                                   csum_partial(udp, sizeof(*udp) + sizeof(payload_buf), 0));
     ip->tot_len = htons( new_len );
     ip_send_check(ip);
 
