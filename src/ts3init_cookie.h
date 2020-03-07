@@ -1,7 +1,7 @@
 #ifndef _TS3INIT_COOKIE_H
 #define _TS3INIT_COOKIE_H
 
-#include <time.h>
+typedef u32 time_t;
 
 enum
 {
