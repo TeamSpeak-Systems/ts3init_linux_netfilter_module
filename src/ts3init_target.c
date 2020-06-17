@@ -134,7 +134,7 @@ static void dst_init2(struct dst_entry *dst, struct net_device *dev)
 static bool
 ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *par, 
                         const struct iphdr *oldip, const struct udphdr *oldudp,
-                        const void* payload, const size_t payload_size)
+                        const void* payload, size_t payload_size)
 {
     struct sk_buff *skb;
     struct iphdr *ip;
