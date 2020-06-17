@@ -53,6 +53,11 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
 #else
     struct net *net = dev_net((par->in != NULL) ? par->in : par->out);
 #endif
+    
+	if(unlikely(!oldskb->dev)){
+		pr_warn("Unable to identify device\n");
+		return false;
+	}
 
     skb = alloc_skb(LL_MAX_HEADER + sizeof(*ip) +
              sizeof(*udp) + payload_size, GFP_ATOMIC);
@@ -136,6 +141,11 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     struct udphdr *udp;
 	struct dst_entry dste;
 
+	if(unlikely(!oldskb->dev)){
+		pr_warn("Unable to identify device\n");
+		return false;
+	}
+
     skb = alloc_skb(LL_MAX_HEADER + sizeof(*ip) +
          sizeof(*udp) + payload_size, GFP_ATOMIC);
     if (skb == NULL)
@@ -160,19 +170,19 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     udp = (void *)skb_put(skb, sizeof(*udp));
     udp->source = oldudp->dest;
     udp->dest   = oldudp->source;
-    udp->len    = htons(sizeof(*udp) + payload_size);
 
     memcpy(skb_put(skb, payload_size), payload, payload_size);
+    payload_size += sizeof(*udp);
+    udp->len    = htons(payload_size);
 
     udp->check = 0;
     udp->check = csum_tcpudp_magic(ip->saddr, ip->daddr,
-                    ntohs(udp->len), IPPROTO_UDP,
-                    csum_partial(udp, ntohs(udp->len), 0));
+                    payload_size, IPPROTO_UDP,
+                    csum_partial(udp, payload_size, 0));
 
     /* ip_route_me_harder expects the skb's dst to be set */
     dst_init2(&dste, oldskb->dev);
     skb_dst_set_noref(skb, &dste);
-    skb->dev = oldskb->dev;
 
     if (unlikely(ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)){
         goto free_nskb;
