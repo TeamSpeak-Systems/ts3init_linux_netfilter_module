@@ -184,7 +184,11 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     dst_init2(&dste, oldskb->dev);
     skb_dst_set_noref(skb, &dste);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,9,0)
     if (unlikely(ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)){
+#else
+	if (unlikely(ip_route_me_harder(par_net(par), skb->sk, skb, RTN_UNSPEC) != 0)){
+#endif
         goto free_nskb;
     }
 
