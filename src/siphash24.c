@@ -100,24 +100,31 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
 
     switch (next_byte)
     {
+    /* FALLTHROUGH */ 
     case 1:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 8;
+    /* FALLTHROUGH */ 
     case 2:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 16;
+    /* FALLTHROUGH */ 
     case 3:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 24;
+    /* FALLTHROUGH */ 
     case 4:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 32;
+    /* FALLTHROUGH */ 
     case 5:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 40;
+    /* FALLTHROUGH */ 
     case 6:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 48;
+    /* FALLTHROUGH */ 
     case 7:
         if (in==end) goto __exit_update;
         m |= ((u64)(*in++)) << 56;
@@ -129,6 +136,7 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
           ts3init_SIPROUND(&v0, &v1, &v2, &v3);
 
         v0 ^= m;
+    /* FALLTHROUGH */ 
     case 0:
         break;
     }
@@ -153,18 +161,25 @@ void ts3init_siphash_update(struct ts3init_siphash_state* state, const u8 *in, s
     {
         case 7:
             m |= ((u64)(in[6])) << 48;
+        /* FALLTHROUGH */ 
         case 6:
             m |= ((u64)(in[5])) << 40;
+        /* FALLTHROUGH */ 
         case 5:
             m |= ((u64)(in[4])) << 32;
+        /* FALLTHROUGH */ 
         case 4:
             m |= ((u64)(in[3])) << 24;
+        /* FALLTHROUGH */ 
         case 3:
             m |= ((u64)(in[2])) << 16;
+        /* FALLTHROUGH */ 
         case 2:
             m |= ((u64)(in[1])) << 8;
+        /* FALLTHROUGH */ 
         case 1:
             m |= ((u64)(in[0]));
+        /* FALLTHROUGH */ 
         case 0:
             break;
     }

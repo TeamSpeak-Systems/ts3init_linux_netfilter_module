@@ -8,7 +8,8 @@ clean:
 	$(MAKE) -C src -f Makefile.xtables clean;
 	$(MAKE) -C test clean;
 
-install:
+install: all
 	$(MAKE) -C src modules_install;
 	$(MAKE) -C src -f Makefile.xtables install;
+	depmod -a
 

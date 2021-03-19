@@ -1,5 +1,6 @@
 # -*- Makefile -*-
-MODULES_DIR := /lib/modules/$(shell uname -r)
+KVER := $(shell uname -r)
+MODULES_DIR := /lib/modules/${KVER}
 KERNEL_DIR := ${MODULES_DIR}/build
 
 obj-m += xt_ts3init.o
