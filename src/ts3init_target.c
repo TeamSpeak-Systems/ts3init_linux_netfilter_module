@@ -95,7 +95,13 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     memcpy(&fl.daddr, &ip->daddr, sizeof(fl.daddr));
     fl.fl6_sport = udp->source;
     fl.fl6_dport = udp->dest;
+    
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
     security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi(&fl));
+#else
+    security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi_common(&fl));
+#endif
+    
     dst = ip6_route_output(net, NULL, &fl);
     if (unlikely(dst == NULL || dst->error != 0)) {
         dst_release(dst);
