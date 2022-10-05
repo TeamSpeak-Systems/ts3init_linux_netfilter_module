@@ -84,6 +84,7 @@ static inline void proc_remove(struct proc_dir_entry *de)
 #   define ip6_local_out(xnet, xsk, xskb) ip6_local_out(xskb)
 #   define ip6_route_me_harder(xnet, xskb) ip6_route_me_harder(xskb)
 #   define ip_local_out(xnet, xsk, xskb) ip_local_out(xskb)
+#   define ip_route_me_harder(xnet, xskb, xaddrtype) ip_route_me_harder((xskb), (xaddrtype))
 #endif
 
 static inline struct net *par_net(const struct xt_action_param *par)

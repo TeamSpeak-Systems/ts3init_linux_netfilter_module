@@ -43,7 +43,7 @@
 static struct crypto_shash *sha512_tfm;
 
 
-static void check_update_seed_cache(time_t time, __u8 index, 
+static void check_update_seed_cache(ktime_t time, __u8 index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* random_seed)
 {
@@ -85,15 +85,15 @@ static void check_update_seed_cache(time_t time, __u8 index,
     }
 }
 
-__u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
+__u64* ts3init_get_cookie_seed(ktime_t current_time, __u8 packet_index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* random_seed)
 {
 
     __u8 current_cache_index;
     __u8 packet_cache_index;
-    time_t current_cache_time;
-    time_t packet_cache_time;
+    ktime_t current_cache_time;
+    ktime_t packet_cache_time;
 
     if (packet_index >= 8) return NULL;
 
@@ -101,7 +101,7 @@ __u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index,
     packet_cache_index = packet_index / 4;
 
     /* get cache time of packet */
-    current_cache_time = current_time & ~((time_t)3);
+    current_cache_time = current_time & ~((ktime_t)3);
     packet_cache_time = current_cache_time 
         - ((current_cache_index ^ packet_cache_index)*4);
 

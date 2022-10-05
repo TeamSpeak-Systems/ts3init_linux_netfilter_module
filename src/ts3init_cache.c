@@ -26,7 +26,7 @@
 struct ts3init_cache_t
 {
     unsigned long                  saved_jiffies;
-    time_t                         unix_time;
+    ktime_t                         unix_time;
     struct xt_ts3init_cookie_cache cookie_cache;
 };        
 
@@ -45,11 +45,11 @@ static inline void update_cache_time(unsigned long jifs,
    }
 }
 
-time_t ts3init_get_cached_unix_time(void)
+ktime_t ts3init_get_cached_unix_time(void)
 {
     struct ts3init_cache_t* cache;
     unsigned long jifs;
-    time_t current_unix_time;
+    ktime_t current_unix_time;
 
     jifs = jiffies;
             
@@ -69,7 +69,7 @@ bool ts3init_get_cookie_seed_for_packet_index(u8 packet_index, const u8* random_
     struct ts3init_cache_t* cache;
     u64* result;
     unsigned long jifs;
-    time_t current_unix_time;
+    ktime_t current_unix_time;
 
     jifs = jiffies;
     cache = &get_cpu_var(ts3init_cache);
@@ -95,7 +95,7 @@ bool ts3init_get_current_cookie_seed(const u8* random_seed, u64 (*cookie)[2], u8
     struct ts3init_cache_t* cache;
     u64* result;
     unsigned long jifs;
-    time_t current_unix_time;
+    ktime_t current_unix_time;
 
     jifs = jiffies;
     cache = &get_cpu_var(ts3init_cache);

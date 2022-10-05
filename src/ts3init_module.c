@@ -30,21 +30,10 @@ int ts3init_cookie_init(void) __init;
 void ts3init_cookie_exit(void);
 
 MODULE_AUTHOR("Niels Werensteijn <niels.werensteijn@teamspeak.com>");
-MODULE_AUTHOR("Mathew Heard <mheard@x4b.net>");
 MODULE_DESCRIPTION("A module to aid in ts3 spoof protection");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_ts3init");
 MODULE_ALIAS("ip6t_ts3init");
-MODULE_ALIAS("ipt_ts3init_get_cookie");
-MODULE_ALIAS("ip6t_ts3init_get_cookie");
-MODULE_ALIAS("ipt_ts3init_get_puzzle");
-MODULE_ALIAS("ip6t_ts3init_get_puzzle");
-MODULE_ALIAS("ipt_TS3INIT_SET_COOKIE");
-MODULE_ALIAS("ip6t_TS3INIT_SET_COOKIE");
-MODULE_ALIAS("ipt_TS3INIT_GET_COOKIE");
-MODULE_ALIAS("ip6t_TS3INIT_GET_COOKIE");
-MODULE_ALIAS("ipt_TS3INIT_RESET");
-MODULE_ALIAS("ip6t_TS3INIT_RESET");
 
 static int __init ts3init_init(void)
 {

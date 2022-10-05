@@ -1,8 +1,6 @@
 #ifndef _TS3INIT_COOKIE_H
 #define _TS3INIT_COOKIE_H
 
-typedef u32 time_t;
-
 enum
 {
     SHA512_SIZE = 64,
@@ -11,7 +9,7 @@ enum
 
 struct xt_ts3init_cookie_cache
 {
-    time_t time[2];
+    ktime_t time[2];
     union
     {
         __u8 seed8[SHA512_SIZE*2];
@@ -24,7 +22,7 @@ struct xt_ts3init_cookie_cache
  * If the cookie seed is missing in cache it will be generated using 
  * random_seed and current_time
  */
-__u64* ts3init_get_cookie_seed(time_t current_time, __u8 packet_index, 
+__u64* ts3init_get_cookie_seed(ktime_t current_time, __u8 packet_index, 
                 struct xt_ts3init_cookie_cache* cache,
                 const __u8* random_seed);
 

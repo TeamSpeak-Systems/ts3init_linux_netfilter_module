@@ -95,13 +95,11 @@ ts3init_send_ipv6_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     memcpy(&fl.daddr, &ip->daddr, sizeof(fl.daddr));
     fl.fl6_sport = udp->source;
     fl.fl6_dport = udp->dest;
-    
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
-    security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi(&fl));
-#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 121)
     security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi_common(&fl));
+#else
+    security_skb_classify_flow((struct sk_buff *)oldskb, flowi6_to_flowi(&fl));
 #endif
-    
     dst = ip6_route_output(net, NULL, &fl);
     if (unlikely(dst == NULL || dst->error != 0)) {
         dst_release(dst);
@@ -190,11 +188,11 @@ ts3init_send_ipv4_reply(struct sk_buff *oldskb, const struct xt_action_param *pa
     dst_init2(&dste, oldskb->dev);
     skb_dst_set_noref(skb, &dste);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,9,0)
-    if (unlikely(ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0)){
-#else
-	if (unlikely(ip_route_me_harder(par_net(par), skb->sk, skb, RTN_UNSPEC) != 0)){
-#endif
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 78)
+    if (unlikely(ip_route_me_harder(par_net(par), skb->sk, skb, RTN_UNSPEC) != 0)){
+    #else
+    if (ip_route_me_harder(par_net(par), skb, RTN_UNSPEC) != 0){
+    #endif
         goto free_nskb;
     }
 
@@ -233,7 +231,11 @@ ts3init_reset_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *par)
         return NF_DROP;
 
     ts3init_send_ipv4_reply(skb, par, ip, udp, ts3init_reset_packet, sizeof(ts3init_reset_packet));
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)
     nf_reset_ct(skb);
+    #else
+    nf_reset(skb);
+    #endif
     consume_skb(skb);
     return NF_STOLEN;
 }
@@ -253,7 +255,11 @@ ts3init_reset_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *par)
         return NF_DROP;
 
     ts3init_send_ipv6_reply(skb, par, ip, udp, ts3init_reset_packet, sizeof(ts3init_reset_packet));
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)
     nf_reset_ct(skb);
+    #else
+    nf_reset(skb);
+    #endif
     consume_skb(skb);
     return NF_STOLEN;
 }
@@ -363,7 +369,11 @@ ts3init_set_cookie_ipv4_tg(struct sk_buff *skb, const struct xt_action_param *pa
         ts3init_fill_set_cookie_payload(skb, par, cookie, packet_index, payload))
     {
         ts3init_send_ipv4_reply(skb, par, ip, udp, payload, sizeof(payload));
+        #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)
         nf_reset_ct(skb);
+	#else
+        nf_reset(skb);
+	#endif
         consume_skb(skb);
         return NF_STOLEN;
     }
@@ -392,7 +402,11 @@ ts3init_set_cookie_ipv6_tg(struct sk_buff *skb, const struct xt_action_param *pa
         ts3init_fill_set_cookie_payload(skb, par, cookie, packet_index, payload))
     {
         ts3init_send_ipv6_reply(skb, par, ip, udp, payload, sizeof(payload));
+	#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)
         nf_reset_ct(skb);
+	#else
+	nf_reset(skb);
+	#endif
         consume_skb(skb);
         return NF_STOLEN;
     }
@@ -430,7 +444,7 @@ static int ts3init_set_cookie_tg_check(const struct xt_tgchk_param *par)
 static inline void
 ts3init_fill_get_cookie_payload(u8 *payload)
 {
-    time_t current_unix_time = ts3init_get_cached_unix_time();
+    ktime_t current_unix_time = ts3init_get_cached_unix_time();
     payload[TS3INIT_HEADER_CLIENT_LENGTH - 1] = COMMAND_GET_COOKIE;
     payload[TS3INIT_HEADER_CLIENT_LENGTH + 0] = current_unix_time >> 24;
     payload[TS3INIT_HEADER_CLIENT_LENGTH + 1] = current_unix_time >> 16;
