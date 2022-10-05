@@ -199,7 +199,7 @@ ts3init_get_cookie_mt(const struct sk_buff *skb, struct xt_action_param *par)
     if (info->specific_options & CHK_GET_COOKIE_CHECK_TIMESTAMP)
     {
         __u8 *payload, payload_buf[ts3init_payload_sizes[COMMAND_GET_COOKIE]];
-        time_t current_unix_time, packet_unix_time;
+        ktime_t current_unix_time, packet_unix_time;
 
         payload = get_payload(skb, par, &header_data, payload_buf, sizeof(payload_buf));
         if (!payload)
